@@ -12,19 +12,8 @@ import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
-import com.github.zukarusan.jchoreco.system.ChordProcessor;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-
 import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.AudioEvent;
-import be.tarsos.dsp.AudioProcessor;
 import be.tarsos.dsp.io.android.AudioDispatcherFactory;
 import be.tarsos.dsp.pitch.PitchDetectionHandler;
 import be.tarsos.dsp.pitch.PitchDetectionResult;
@@ -83,86 +72,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Reconocer acordes
 
-        TextView chordText = findViewById(R.id.chord);
-
-        PipedOutputStream loBuffer = new PipedOutputStream();
-        PipedInputStream liBuffer = null;
-        try {
-            liBuffer = new PipedInputStream(loBuffer);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        BufferedReader labelReader = new BufferedReader(new InputStreamReader(liBuffer));
-
-        ChordProcessor chordProcessor = null;
-
-
-        PipedInputStream finalLiBuffer = liBuffer;
-        AudioProcessor labelUpdater = new AudioProcessor() {
-            @Override
-            public boolean process(AudioEvent audioEvent) {
-                try {
-                    String cl;
-                    if ((cl = labelReader.readLine()) != null) {
-                        chordText.setText(cl);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return true;
-            }
-
-            @Override
-            public void processingFinished() {
-                try {
-                    loBuffer.close();
-                    finalLiBuffer.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-
-        ChordProcessor.isDebug = false;
-        //AudioDispatcher dispatcher2 = AudioDispatcherFactory.fromDefaultMicrophone((int) 22050, 1024, 1024/2);
-        chordProcessor = new ChordProcessor(22050, 1024, loBuffer);
-        dispatcher.addAudioProcessor(chordProcessor);
-        dispatcher.addAudioProcessor(labelUpdater);
-
-        /*frame.addWindowListener(new WindowAdapter() { // RELEASE RESOURCES
-            @Override
-            public void windowClosing(WindowEvent e) {
-                super.windowClosing(e);
-                try {
-                    System.out.println("Releasing Resources");
-                    dispatcher.stop();
-                    chordProcessor.close();
-                    loBuffer.close();
-                    liBuffer.close();
-                } catch (Exception exception) {
-                    exception.printStackTrace();
-                    System.exit(1);
-                }
-                System.exit(0); // there is still a bug of which a thread running TODO
-            }
-        });*/
-
-        ChordProcessor finalChordProcessor = chordProcessor;
-        PipedInputStream finalLiBuffer1 = liBuffer;
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {  // SAFE SHUTDOWN HOOK FOR RELEASING RESOURCES
-            try {
-                System.out.println("Releasing Resources");
-                finalChordProcessor.close();
-                loBuffer.close();
-                finalLiBuffer1.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-                System.exit(1);
-            }
-        }));
-
-        dispatcher.run();
-
     }
 
     private void requestPermission() {
@@ -184,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
         noteText.setText(noteName);
 
         try {
-            Thread.sleep(15);
+            Thread.sleep(25);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
