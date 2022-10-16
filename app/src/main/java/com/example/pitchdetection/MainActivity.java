@@ -7,10 +7,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.IOException;
 
 import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.AudioEvent;
@@ -68,9 +74,8 @@ public class MainActivity extends AppCompatActivity {
 
             }
         }));
-        new Thread(dispatcher,"Audio Dispatcher").start();
 
-        // Reconocer acordes
+        new Thread(dispatcher,"Audio Dispatcher").start();
 
     }
 
