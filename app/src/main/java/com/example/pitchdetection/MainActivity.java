@@ -7,16 +7,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.IOException;
 
 import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.AudioEvent;
@@ -28,6 +26,7 @@ import be.tarsos.dsp.pitch.PitchProcessor.PitchEstimationAlgorithm;
 
 public class MainActivity extends AppCompatActivity {
     private int RequestPermissionCode;
+    Button boton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +40,14 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "Se necesita permiso para usar el micro", Toast.LENGTH_SHORT);
             }
         }
+
+        boton = findViewById(R.id.button);
+        boton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                switchActivity();
+            }
+        });
 
         // Creamos un AudioDispatcher asociado al micrófono por defecto, obtenido en tiempo de ejecución por
         // la llamada AudioSystem.getTargetDataLine(format)
@@ -76,7 +83,6 @@ public class MainActivity extends AppCompatActivity {
         }));
 
         new Thread(dispatcher,"Audio Dispatcher").start();
-
     }
 
     private void requestPermission() {
@@ -102,5 +108,10 @@ public class MainActivity extends AppCompatActivity {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    private void switchActivity() {
+        Intent cambio = new Intent(this, ChordDectectionActivity.class);
+        startActivity(cambio);
     }
 }

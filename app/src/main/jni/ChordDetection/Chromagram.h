@@ -37,9 +37,7 @@
 //=======================================================================
 /** A class for calculating a Chromagram from input audio
  * in a real-time context */
-class Chromagram
-{
-
+class Chromagram {
 public:
     /** Constructor
      * @param frameSize the input audio frame size
@@ -93,7 +91,10 @@ public:
      */
     bool isReady();
 
+    void setMagnitudeSpectrum(double* spectrumSamples);
+
 private:
+    static const int SEMITONES = 12;
 
     void setupFFT();
     void calculateChromagram();
@@ -109,7 +110,7 @@ private:
     std::vector<double> chromagram;
 
     double referenceFrequency;
-    double noteFrequencies[12];
+    double noteFrequencies[SEMITONES];
 
     int bufferSize;
     int samplingFrequency;

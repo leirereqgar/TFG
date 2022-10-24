@@ -2,4 +2,6 @@
     <string name="app_name">PitchDetection</string>
     <string name="textview">TextView</string>
     <string name="frecuencia_y_nombre_nota_simple">Frecuencia y nombre nota simple</string>
+    <string name="acorde">Acorde</string>
+    <string name="detected">TextView</string>
 </resources>

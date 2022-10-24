@@ -5,16 +5,20 @@ public class JNIParser {
         System.loadLibrary("native-lib");
     }
 
+    public static int[] chordDetection(double[] samples, double[] spectrum_samples) {
+        return chordDetectionJNI(samples, spectrum_samples);
+    }
+
     public static double[] window(double[] samples) {
-        return windowJni(samples);
+        return windowJNI(samples);
     }
 
-    public void init() {
+    public static double[] getChromagram(){return getChromagramJNI();}
 
-    }
+    public static double[] fft(double[] v, boolean DIRECT){return fftJNI(v, DIRECT);}
 
-    public static int[] chordDetection(double[] samples) {
-        return chordDetectionJni(samples);
+    public static double[] bandPassFilter(double[] samples, float low_cut, float high_cut) {
+        return bandPasFilterJNI(samples, low_cut, high_cut, 44100, 8192);
     }
 
     public static double[] getSamplesToDouble(short[] inputBuffer) {
@@ -28,6 +32,9 @@ public class JNIParser {
     /**
      * Metodos para acceder al codigo en C++
      */
-    private static native int[] chordDetectionJni(double[] samples);
-    private static native double[] windowJni(double[] samples);
+    private static native int[] chordDetectionJNI(double[] samples, double[] spectrum_samples);
+    private static native double[] getChromagramJNI();
+    private static native double[] windowJNI(double[] samples);
+    private static native double[] fftJNI(double[] v, boolean DIRECT);
+    private static native double[] bandPasFilterJNI(double[] samples, float low_cut, float high_cut, float sr, float buffer_size);
 }

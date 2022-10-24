@@ -26,20 +26,24 @@
 
 //=======================================================================
 /** A class for estimating chord labels from chromagram input */
-class ChordDetector
-{
+class ChordDetector {
 public:
 
 	/** An enum describing the chord qualities used in the algorithm */
-	enum ChordQuality
-	{
+	enum ChordType {
 		Minor,
 		Major,
-		Suspended,
-		Dominant,
-		Dimished5th,
-		Augmented5th
+		Sus2,
+		Sus4,
+		Dominant7th,
+		Major7th,
+		Minor7th,
+		Diminished5th,
+		Augmented5th,
+		Power5th
 	};
+	static const int NUMCHORDTYPES = 10;
+	static const int SEMITONES     = 12;
 
 	/** Constructor */
 	ChordDetector();
@@ -69,9 +73,9 @@ private:
 	double calculateChordScore (double* chroma, double* chordProfile, double biasToUse, double N);
 	int minimumIndex (double*array, int length);
 
-	double chromagram[12];
-	double chordProfiles[108][12];
-	double chord[108];
+	double chromagram[SEMITONES];
+	double chordProfiles[NUMCHORDTYPES * SEMITONES][SEMITONES];
+	double chord[NUMCHORDTYPES * SEMITONES];
 	double bias;
 };
 
