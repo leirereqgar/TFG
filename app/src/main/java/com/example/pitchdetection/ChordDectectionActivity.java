@@ -13,14 +13,15 @@ import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.widget.TextView;
 
-import enums.Notas;
+import enums.NoteNameEnum;
 
 public class ChordDectectionActivity extends AppCompatActivity {
 
     TextView chord_detected_text;
-    Notas chord_name = Notas.A_SHARP;
+    NoteNameEnum chord_name = NoteNameEnum.A_SHARP;
     int [] chord_detected = new int[2];
     boolean keep_processing;
+    boolean keep_recording;
     private PdfDocument.Page canvas;
 
     double[] audioSamplesBuffer;
@@ -68,7 +69,7 @@ public class ChordDectectionActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 processFrame();
-                                processAudio();
+                                recordAudio();
                             }
                         });
                     } catch (InterruptedException e) {
@@ -83,28 +84,42 @@ public class ChordDectectionActivity extends AppCompatActivity {
         chord_detected_text.setText(chord_name.fromInteger(chord_detected[0]).toString());
     }
 
-    public void processAudio() {
-        if(keep_processing) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    short[] tempAudioSamples = new short[8192];
-                    int numberOfShortRead;
-                    long totalShortsRead = 0;
-                    @SuppressLint("MissingPermission")
-                    AudioRecord record = new AudioRecord(MediaRecorder.AudioSource.DEFAULT,
-                            44100,
-                            AudioFormat.CHANNEL_IN_MONO,
-                            AudioFormat.ENCODING_DEFAULT,
-                            8192);
+    public void recordAudio() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                short[] tempAudioSamples = new short[8192];
+                int numberOfShortRead;
+                long totalShortsRead = 0;
+                @SuppressLint("MissingPermission")
+                AudioRecord record = new AudioRecord(MediaRecorder.AudioSource.DEFAULT,
+                        44100,
+                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_DEFAULT,
+                        8192);
 
-
-                    record.startRecording();
+                record.startRecording();
+                keep_recording = true;
+                while(keep_recording)  {
                     numberOfShortRead = record.read(tempAudioSamples, 0,tempAudioSamples.length);
                     totalShortsRead+=numberOfShortRead;
                     audioSamplesBuffer = JNIParser.getSamplesToDouble(tempAudioSamples);
                     audioSamplesBufferWindowed = JNIParser.window(audioSamplesBuffer);
                     audioSpectrumBuffer = JNIParser.bandPassFilter(JNIParser.fft(audioSamplesBufferWindowed, true), 55, 4000);
+                    processAudio();
+                }
+
+                record.stop();
+                record.release();
+            }
+        }).start();
+    }
+
+    public void processAudio() {
+        if(keep_processing) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
                     final int[] detection = JNIParser.chordDetection(audioSamplesBufferWindowed, audioSpectrumBuffer);
                     chord_detected = detection;
                     System.out.println(chord_detected[0]);
