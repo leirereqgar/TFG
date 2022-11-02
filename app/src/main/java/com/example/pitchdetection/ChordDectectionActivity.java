@@ -5,28 +5,36 @@ import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.pdf.PdfDocument;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
+import enums.ChordTypeEnum;
 import enums.NoteNameEnum;
 
 public class ChordDectectionActivity extends AppCompatActivity {
 
     TextView chord_detected_text;
     NoteNameEnum chord_name = NoteNameEnum.A_SHARP;
+    ChordTypeEnum chord_type = ChordTypeEnum.NoChord;
     int [] chord_detected = new int[2];
     boolean keep_processing;
     boolean keep_recording;
     private PdfDocument.Page canvas;
+    private Button boton;
 
     double[] audioSamplesBuffer;
     double[] audioSamplesBufferWindowed;
     double[] audioSpectrumBuffer;
+
+    private Thread procesar, record_audio, process_audio;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +43,15 @@ public class ChordDectectionActivity extends AppCompatActivity {
 
         checkCaptureAudioPermission();
 
+        boton = findViewById(R.id.button2);
+        boton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                switchActivity();
+                keep_recording = false;
+                keep_processing = false;
+            }
+        });
 
         initActivity();
     }
@@ -43,6 +60,30 @@ public class ChordDectectionActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         startProcessing();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        keep_processing = false;
+        keep_recording = false;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        keep_processing = true;
+        keep_recording = true;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        keep_processing = true;
+        keep_recording = true;
+        procesar.interrupt();
+        record_audio.interrupt();
+        process_audio.interrupt();
     }
 
     public void initActivity() {
@@ -59,12 +100,12 @@ public class ChordDectectionActivity extends AppCompatActivity {
 
     private void startProcessing() {
         keep_processing = true;
-        new Thread(new Runnable(){
+        procesar = new Thread(new Runnable(){
             @Override
             public void run() {
                 while(keep_processing) {
                     try {
-                        Thread.sleep(1000 / 12);
+                        Thread.sleep(1000 / 24);
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -77,15 +118,18 @@ public class ChordDectectionActivity extends AppCompatActivity {
                     }
                 }
             }
-        }).start();
+        });
+
+        procesar.start();
     }
 
     public void processFrame() {
-        chord_detected_text.setText(chord_name.fromInteger(chord_detected[0]).toString());
+        chord_detected_text.setText(chord_name.fromInteger(chord_detected[0]).toString() + " " +
+                                    chord_type.fromInteger(chord_detected[1]).toString());
     }
 
     public void recordAudio() {
-        new Thread(new Runnable() {
+        record_audio = new Thread(new Runnable() {
             @Override
             public void run() {
                 short[] tempAudioSamples = new short[8192];
@@ -112,12 +156,14 @@ public class ChordDectectionActivity extends AppCompatActivity {
                 record.stop();
                 record.release();
             }
-        }).start();
+        });
+
+        record_audio.start();
     }
 
     public void processAudio() {
         if(keep_processing) {
-            new Thread(new Runnable() {
+            process_audio = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     final int[] detection = JNIParser.chordDetection(audioSamplesBufferWindowed, audioSpectrumBuffer);
@@ -125,8 +171,14 @@ public class ChordDectectionActivity extends AppCompatActivity {
                     System.out.println(chord_detected[0]);
                     System.out.println(chord_detected[1]);
                 }
-            }).start();
+            });
+            process_audio.start();
         }
+    }
+
+    private void switchActivity() {
+        Intent cambio = new Intent(this, MainActivity.class);
+        startActivity(cambio);
     }
 
 

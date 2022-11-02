@@ -32,7 +32,7 @@ Chromagram::Chromagram (int frameSize, int fs)
 {
     // calculate note frequencies
     for (int i = 0; i < 12; i++)
-        noteFrequencies[i] = referenceFrequency * pow (2,(((float) i) / 12));
+        noteFrequencies[i] = referenceFrequency * pow (2,(((float) i) / 24));
 
     // set up FFT
     //setupFFT();

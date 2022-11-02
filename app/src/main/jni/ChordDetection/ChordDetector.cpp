@@ -88,12 +88,7 @@ void ChordDetector::classifyChromagram(){
 
 	// sus4 chords
 	for (j = 60; j < 72; j++) {
-		/*
-         * The following line is there in order to disable this chord. Sus4 chords have always a Sus2 chord
-         * with the same notes. For example, "Dsus4" has the same notes as "Gsus2"
-         * */
-		chord[j] = 1.0;
-//		chord[j] = calculateChordScore(chromagram, chordProfiles[j], 1, 3);
+		chord[j] = calculateChordScore(chromagram, chordProfiles[j], 1, 3);
 	}
 
 	// major 7th chords
@@ -111,12 +106,7 @@ void ChordDetector::classifyChromagram(){
 		chord[j] = calculateChordScore(chromagram, chordProfiles[j], bias, 4);
 	}
 
-	// power 5th chords
-	for (j = 108; j < 120; j++) {
-		chord[j] = calculateChordScore(chromagram, chordProfiles[j], bias, 2);
-	}
-
-	chordindex = minimumIndex(chord, NUMCHORDTYPES * SEMITONES);
+	chordindex = minimumIndex(chord, 108);
 
 	// major
 	if (chordindex < 12) {
@@ -145,37 +135,31 @@ void ChordDetector::classifyChromagram(){
 	// sus2
 	if ((chordindex >= 48) && (chordindex < 60)) {
 		rootNote = chordindex - 48;
-		quality = Sus2;
+		quality = Suspended;
 	}
 
 	// sus4
 	if ((chordindex >= 60) && (chordindex < 72)) {
 		rootNote = chordindex - 60;
-		quality = Sus4;
+		quality = Suspended;
 	}
 
 	// major 7th
 	if ((chordindex >= 72) && (chordindex < 84)) {
 		rootNote = chordindex - 72;
-		quality = Major7th;
+		quality = Major;
 	}
 
 	// minor 7th
 	if ((chordindex >= 84) && (chordindex < 96)) {
 		rootNote = chordindex - 84;
-		quality = Minor7th;
+		quality = Major;
 	}
 
 	// dominant 7th
 	if ((chordindex >= 96) && (chordindex < 108)) {
 		rootNote = chordindex - 96;
-		quality = Dominant7th;
-	}
-
-	// power 5th
-	if ((chordindex >= 108) && (chordindex < 120)) {
-		rootNote = chordindex - 108;
-		quality = Power5th;
+		quality = Dominant;
 	}
 }
 
@@ -218,7 +202,7 @@ void ChordDetector::makeChordProfiles() {
 	int seventh;
 
 	// set profiles matrix to all zeros
-		for (j = 0; j < (NUMCHORDTYPES * SEMITONES); j++) {
+		for (j = 0; j < 108; j++) {
 		for (t = 0; t < SEMITONES; t++) {
 			chordProfiles[j][t] = 0;
 		}
@@ -346,17 +330,6 @@ void ChordDetector::makeChordProfiles() {
 		chordProfiles[j][third] = 1;
 		chordProfiles[j][fifth] = 1;
 		chordProfiles[j][seventh] = 1;
-
-		j++;
-	}
-
-	// power 5th chords
-	for (i = 0; i < SEMITONES; i++) {
-		root = i % SEMITONES;
-		fifth = (i + 7) % SEMITONES;
-
-		chordProfiles[j][root] = 1;
-		chordProfiles[j][fifth] = 1;
 
 		j++;
 	}

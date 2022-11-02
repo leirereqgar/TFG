@@ -1,7 +1,13 @@
 package enums;
 
 public enum ChordTypeEnum {
-    Minor(0), Major(1), Sus2(2), Sus4(3), Dominant7th(4), Major7th(5), Minor7th(6), Diminished5th(7), Augmented5th(8), Power5th(9), NoChord(-1);
+    Minor(0),
+    Major(1),
+    Suspended(2),
+    Dominant(3),
+    Diminished5th(4),
+    Augmented5th(5),
+    NoChord(-1);
 
     private final int value;
     public static int numberOfChordTypes = 10;
@@ -21,21 +27,13 @@ public enum ChordTypeEnum {
             case 1:
                 return Major;
             case 2:
-                return Sus2;
+                return Suspended;
             case 3:
-                return Sus4;
-            case 4:
-                return Dominant7th;
+                return Dominant;
             case 5:
-                return Major7th;
-            case 6:
-                return Minor7th;
-            case 7:
                 return Diminished5th;
-            case 8:
+            case 6:
                 return Augmented5th;
-            case 9:
-                return Power5th;
             case -1:
             default:
                 return NoChord;
@@ -48,22 +46,14 @@ public enum ChordTypeEnum {
                 return "Minor";
             case Major:
                 return "Major";
-            case Sus2:
-                return "Sus2";
-            case Sus4:
-                return "Sus4";
-            case Dominant7th:
-                return "7th";
-            case Major7th:
-                return "Major7th";
-            case Minor7th:
-                return "Minor7th";
+            case Suspended:
+                return "Suspended";
+            case Dominant:
+                return "Dominant 7th";
             case Diminished5th:
                 return "Dim";
             case Augmented5th:
                 return "Aug";
-            case Power5th:
-                return "5th";
             case NoChord:
             default:
                 return "---";

@@ -33,16 +33,11 @@ public:
 	enum ChordType {
 		Minor,
 		Major,
-		Sus2,
-		Sus4,
-		Dominant7th,
-		Major7th,
-		Minor7th,
+		Suspended,
+		Dominant,
 		Diminished5th,
-		Augmented5th,
-		Power5th
+		Augmented5th
 	};
-	static const int NUMCHORDTYPES = 10;
 	static const int SEMITONES     = 12;
 
 	/** Constructor */
@@ -74,8 +69,8 @@ private:
 	int minimumIndex (double*array, int length);
 
 	double chromagram[SEMITONES];
-	double chordProfiles[NUMCHORDTYPES * SEMITONES][SEMITONES];
-	double chord[NUMCHORDTYPES * SEMITONES];
+	double chordProfiles[108][SEMITONES];
+	double chord[108];
 	double bias;
 };
 
