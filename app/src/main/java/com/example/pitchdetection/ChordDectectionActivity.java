@@ -5,21 +5,29 @@ import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.pdf.PdfDocument;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.example.pitchdetection.services.ChordDetectionService;
+
+import enums.Actions;
 import enums.ChordTypeEnum;
 import enums.NoteNameEnum;
 
 public class ChordDectectionActivity extends AppCompatActivity {
+    ChordDetectionReceiver receiver;
 
     TextView chord_detected_text;
     NoteNameEnum chord_name = NoteNameEnum.A_SHARP;
@@ -34,8 +42,6 @@ public class ChordDectectionActivity extends AppCompatActivity {
     double[] audioSamplesBufferWindowed;
     double[] audioSpectrumBuffer;
 
-    private Thread procesar, record_audio, process_audio;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,7 +55,6 @@ public class ChordDectectionActivity extends AppCompatActivity {
             public void onClick(View view) {
                 switchActivity();
                 keep_recording = false;
-                keep_processing = false;
             }
         });
 
@@ -59,34 +64,49 @@ public class ChordDectectionActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        registerBroadcastReceiver();
         startProcessing();
+        startRecording();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        keep_processing = false;
-        keep_recording = false;
+        stopRecording();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        keep_processing = true;
-        keep_recording = true;
+        startRecording();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        keep_processing = true;
-        keep_recording = true;
-        procesar.interrupt();
-        record_audio.interrupt();
-        process_audio.interrupt();
+        stopRecording();
+
+        try{
+            unregisterReceiver(receiver);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void initActivity() {
+        Intent service_intent = new Intent(getApplicationContext(), ChordDetectionService.class);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            try {
+                getApplicationContext().startForegroundService(service_intent);
+            }
+            catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+        else
+            getApplicationContext().startService(service_intent);
+
         chord_detected[0] = -1;
         chord_detected[1] = -1;
         chord_detected_text = findViewById(R.id.chord);
@@ -100,7 +120,7 @@ public class ChordDectectionActivity extends AppCompatActivity {
 
     private void startProcessing() {
         keep_processing = true;
-        procesar = new Thread(new Runnable(){
+        new Thread(new Runnable(){
             @Override
             public void run() {
                 while(keep_processing) {
@@ -110,7 +130,6 @@ public class ChordDectectionActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 processFrame();
-                                recordAudio();
                             }
                         });
                     } catch (InterruptedException e) {
@@ -118,9 +137,17 @@ public class ChordDectectionActivity extends AppCompatActivity {
                     }
                 }
             }
-        });
+        }).start();
+    }
 
-        procesar.start();
+    private void startRecording() {
+        sendMessageToService(Actions.START_RECORDING);
+        keep_recording = true;
+    }
+
+    private void stopRecording() {
+        sendMessageToService(Actions.STOP_RECORDING);
+        keep_recording = false;
     }
 
     public void processFrame() {
@@ -128,57 +155,57 @@ public class ChordDectectionActivity extends AppCompatActivity {
                                     chord_type.fromInteger(chord_detected[1]).toString());
     }
 
-    public void recordAudio() {
-        record_audio = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                short[] tempAudioSamples = new short[8192];
-                int numberOfShortRead;
-                long totalShortsRead = 0;
-                @SuppressLint("MissingPermission")
-                AudioRecord record = new AudioRecord(MediaRecorder.AudioSource.DEFAULT,
-                        44100,
-                        AudioFormat.CHANNEL_IN_MONO,
-                        AudioFormat.ENCODING_DEFAULT,
-                        8192);
-
-                record.startRecording();
-                keep_recording = true;
-                while(keep_recording)  {
-                    numberOfShortRead = record.read(tempAudioSamples, 0,tempAudioSamples.length);
-                    totalShortsRead+=numberOfShortRead;
-                    audioSamplesBuffer = JNIParser.getSamplesToDouble(tempAudioSamples);
-                    audioSamplesBufferWindowed = JNIParser.window(audioSamplesBuffer);
-                    audioSpectrumBuffer = JNIParser.bandPassFilter(JNIParser.fft(audioSamplesBufferWindowed, true), 55, 4000);
-                    processAudio();
-                }
-
-                record.stop();
-                record.release();
-            }
-        });
-
-        record_audio.start();
-    }
-
-    public void processAudio() {
-        if(keep_processing) {
-            process_audio = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    final int[] detection = JNIParser.chordDetection(audioSamplesBufferWindowed, audioSpectrumBuffer);
-                    chord_detected = detection;
-                    System.out.println(chord_detected[0]);
-                    System.out.println(chord_detected[1]);
-                }
-            });
-            process_audio.start();
-        }
-    }
-
     private void switchActivity() {
         Intent cambio = new Intent(this, MainActivity.class);
         startActivity(cambio);
+    }
+
+    private void sendMessageToService(Actions msg) {
+        try {
+            Intent i = new Intent();
+            i.setAction(msg.toString());
+            sendBroadcast(i);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void registerBroadcastReceiver(){
+        receiver = new ChordDetectionReceiver();
+        try{
+            IntentFilter filter = new IntentFilter();
+            for(int i = 0; i < Actions.values().length; i++)
+                filter.addAction(Actions.values()[i].toString());
+
+            registerReceiver(receiver, filter);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    class ChordDetectionReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            try {
+                String msg = intent.getAction();
+                Bundle extras = intent.getExtras();
+                if(msg != null) {
+                    if(msg.equals(Actions.START_RECORDING)) {
+                    }
+                    else if(msg.equals(Actions.STOP_RECORDING)){
+                    }
+                    else if(msg.equals(Actions.DETECTION_DONE)){
+                        chord_detected = extras.getIntArray(Actions.CHORD_DETECTED.toString());
+                    }
+                }
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 
