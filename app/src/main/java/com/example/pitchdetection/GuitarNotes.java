@@ -19,6 +19,8 @@ public class GuitarNotes {
     }
 
     private void createNotes() {
+        notes.add(new Note(-1000f, "Control"));
+
         notes.add(new Note(82.41f,   "E2"));
         notes.add(new Note(87.31f,   "F2"));
         notes.add(new Note(92.5f,"F#2"));
@@ -58,7 +60,6 @@ public class GuitarNotes {
     public String getNoteName(float p) {
         boolean in_range = false;
         Note n = notes.get(notes.size()-1);
-        System.out.println(n.getName());
 
         in_range = notes.get(0).checkPitch(notes.get(1), notes.get(notes.size()-1), p);
 
