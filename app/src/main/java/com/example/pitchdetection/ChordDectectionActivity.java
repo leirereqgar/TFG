@@ -163,16 +163,16 @@ public class ChordDectectionActivity extends AppCompatActivity {
 
     public void processAudio() {
         if(keep_processing) {
-            process_audio = new Thread(new Runnable() {
-                @Override
-                public void run() {
+//            process_audio = new Thread(new Runnable() {
+//                @Override
+//                public void run() {
                     final int[] detection = JNIParser.chordDetection(audioSamplesBufferWindowed, audioSpectrumBuffer);
                     chord_detected = detection;
                     System.out.println(chord_detected[0]);
                     System.out.println(chord_detected[1]);
-                }
-            });
-            process_audio.start();
+//                }
+//            });
+//            process_audio.start();
         }
     }
 
