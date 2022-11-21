@@ -39,7 +39,7 @@
         android:layout_marginEnd="30dp"
         android:layout_marginBottom="64dp"
         android:text="@string/frecuencia_y_nombre_nota_simple"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/pitch"
         app:layout_constraintEnd_toEndOf="parent"
