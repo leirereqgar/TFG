@@ -25,7 +25,6 @@ import enums.ChordTypeEnum;
 import enums.NoteNameEnum;
 
 public class ChordDectectionActivity extends AppCompatActivity {
-    ChordDetectionReceiver receiver;
 
     TextView chord_detected_text;
     NoteNameEnum chord_name = NoteNameEnum.A_SHARP;
