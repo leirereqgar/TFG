@@ -5,4 +5,7 @@
     <string name="acorde">Acorde</string>
     <string name="detected">TextView</string>
     <string name="ir_a_deteccion_de_acordes">Ir a deteccion de acordes</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="ayuda">Ayuda</string>
 </resources>
