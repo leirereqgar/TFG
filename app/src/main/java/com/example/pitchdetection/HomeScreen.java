@@ -74,7 +74,7 @@ public class HomeScreen extends AppCompatActivity {
     }
 
     private void help() {
-        //TODO: crear la pantalla de ayuda y hacer que el cambio funcione
-        Toast.makeText(this, "TODO", Toast.LENGTH_SHORT);
+        Intent change = new Intent(this, HelpScreen.class);
+        startActivity(change);
     }
 }
