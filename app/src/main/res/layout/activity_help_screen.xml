@@ -7,34 +7,33 @@
     tools:context=".HelpScreen">
 
     <TextView
-        android:id="@+id/textView5"
+        android:id="@+id/instrucciones"
         style="@style/Widget.GuitAR.TextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text=
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. \n
-Curabitur aliquet, purus at rhoncus tincidunt, arcu nibh \n
-sollicitudin urna, sed vulputate erat augue id mi. \n
-Sed consequat tempor sagittis. Curabitur vehicula consequat \n
-eros, a vehicula nunc vehicula vel. Donec sit amet mattis ligula.\n
-Integer tempus risus nunc, eu accumsan ipsum interdum dictum. \n
-Praesent velit neque, volutpat vel odio sit amet, sodales ultrices\n
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:text="Lorem ipsum dolor sit amet, consectetur
+adipiscing elit.Curabitur aliquet, purus at rhoncus tincidunt, arcu nibh
+sollicitudin urna, sed vulputate erat augue id mi.
+Sed consequat tempor sagittis. Curabitur vehicula consequat
+eros, a vehicula nunc vehicula vel. Donec sit amet mattis ligula.
+Integer tempus risus nunc, eu accumsan ipsum interdum dictum.
+Praesent velit neque, volutpat vel odio sit amet, sodales ultrices
 ipsum. Proin congue purus id libero dapibus, quis luctus dui tincidunt."
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/imageView2"
+        app:layout_constraintEnd_toStartOf="@+id/esquema"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.5" />
 
     <ImageView
-        android:id="@+id/imageView2"
+        android:id="@+id/esquema"
         android:layout_width="300dp"
         android:layout_height="300dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/textView5"
+        app:layout_constraintStart_toEndOf="@+id/instrucciones"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.5"
         tools:srcCompat="@tools:sample/avatars" />
