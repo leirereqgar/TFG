@@ -5,7 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layoutDescription="@xml/activity_lessons_screen_scene"
-    tools:context=".LessonsScreen">
+    tools:context=".LessonsScreen"
+    style="@style/Theme.GuitAR.background">
 
     <Button
         style="@style/Widget.GuitAR.Button"
@@ -51,15 +52,15 @@
         app:layout_constraintStart_toEndOf="@+id/c3"
         app:layout_constraintTop_toTopOf="parent" />
 
-<!--    <androidx.constraintlayout.helper.widget.Carousel-->
-<!--        android:id="@+id/carousel"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        app:carousel_firstView="@id/c2"-->
-<!--        app:carousel_backwardTransition="@+id/backward"-->
-<!--        app:carousel_forwardTransition="@+id/forward"-->
-<!--        app:carousel_nextState="@+id/next"-->
-<!--        app:carousel_previousState="@+id/previous"-->
-<!--        app:constraint_referenced_ids="c1, c2, c3, c4"/>-->
+    <androidx.constraintlayout.helper.widget.Carousel
+        android:id="@+id/carousel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:carousel_firstView="@id/c1"
+        app:carousel_backwardTransition="@+id/backward"
+        app:carousel_forwardTransition="@+id/forward"
+        app:carousel_nextState="@+id/next"
+        app:carousel_previousState="@+id/previous"
+        app:constraint_referenced_ids="c1, c2, c3, c4"/>
 
 </androidx.constraintlayout.motion.widget.MotionLayout>

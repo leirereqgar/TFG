@@ -7,7 +7,6 @@
         <item name="colorAccent">@color/colorAccent</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:textColorPrimary">@color/textColorPrimary</item>
-        <item name="android:background">@color/background</item>
 
 
         <!--        &lt;!&ndash; Primary brand color. &ndash;&gt;-->
@@ -22,6 +21,10 @@
 <!--        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>-->
 <!--        &lt;!&ndash; Customize your theme here. &ndash;&gt;-->
 <!--        <item name="android:background">@color/black</item>-->
+    </style>
+
+    <style name="Theme.GuitAR.background" parent="Theme.GuitAR">
+        <item name="android:background">@color/background</item>
     </style>
 
     <style name="Widget.GuitAR.Toolbar" parent="Widget.AppCompat.Toolbar">
@@ -49,6 +52,12 @@
     <style name="Widget.GuitAR.Button.TextButton" parent="Widget.MaterialComponents.Button.TextButton">
         <item name="android:textColor">?android:attr/textColorPrimary</item>
         <item name="android:paddingBottom">10dp</item>
+    </style>
+
+    <style name="Widget.GuitAR.TextView" parent="Widget.MaterialComponents.TextView">
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
+        <item name="android:layout_marginStart">10dp</item>
+        <item name="android:padding">5dp</item>
     </style>
 
 
