@@ -14,7 +14,6 @@ import androidx.annotation.Nullable;
 import com.example.pitchdetection.JNIParser;
 
 public class ChordRecognitionService extends Service {
-    public static final ChordRecognitionService instance = new ChordRecognitionService();
     private final int BUFFER_SIZE = 8192;
     private static int [] chord = new int[2];
     double [] audio_samples_buffer;
@@ -22,16 +21,13 @@ public class ChordRecognitionService extends Service {
     double [] audio_spectrum_buffer;
     boolean keep_recording = false;
 
-    private ChordRecognitionService() {
+    @Override
+    public void onCreate() {
         chord[0] = -1;
         chord[1] = -1;
     }
 
-    public static ChordRecognitionService getInstance() {
-        return instance;
-    }
-
-    public static int [] chord() {
+    public int [] getChord() {
         return chord;
     }
 
