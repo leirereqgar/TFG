@@ -72,7 +72,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         camera_bridge_view = findViewById(R.id.cameraViewer);
         camera_bridge_view.setVisibility(SurfaceView.VISIBLE);
         //Descomentar para camara frontal
-        //camera_bridge_view.setCameraIndex(1); //DEBUG
+        camera_bridge_view.setCameraIndex(1); //DEBUG
         camera_bridge_view.setCvCameraViewListener(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -98,8 +98,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         };
 
         //Asociar el service para ir escuchando las frecuencias
-        Intent service_intent = new Intent(this, ChordRecognitionService.class);
-        startService(service_intent);
+//        Intent service_intent = new Intent(this, ChordRecognitionService.class);
+//        startService(service_intent);
     }
 
     @Override
@@ -110,13 +110,13 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        chord = ChordRecognitionService.getInstance().chord();
-        translateChord();
+        //chord = ChordRecognitionService.getInstance().chord();
+        //translateChord();
 
         // Obtener frame en color
         src = inputFrame.rgba();
         // Voltear la imagen en el eje y para que actue como un espejo
-        //Core.flip(src, src, 1);  //DEBUG
+        Core.flip(src, src, 1);  //DEBUG
         // Convertir al espacio de color hsv
         Imgproc.cvtColor(src, hsv, Imgproc.COLOR_BGR2HSV);
         // Con los limites definidos, aislar el color amarillo de la imagen
@@ -135,14 +135,18 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             // Descartar los contornos que no son rectangulos y con boundingRect conseguir los elementos distintivos
             if(Math.abs(area)>= min_area && n_vertices == 4 && n_vertices <= 6) {
                 rectangle = Imgproc.boundingRect(contour);
-                Imgproc.circle(src, new Point(rectangle.x+rectangle.width+150, 10+rectangle.y),30, new Scalar(255,255,255),-1);
-                Imgproc.circle(src, new Point(rectangle.x+rectangle.width+150,10+rectangle.y+rectangle.height/6),30, new Scalar(255,255,255),-1);
-                Imgproc.circle(src, new Point(rectangle.x+rectangle.width+150,10+rectangle.y+(rectangle.height/6)*2),30, new Scalar(255,255,255),-1);
 
-                Imgproc.line(src,
-                        new Point(rectangle.x, rectangle.y+rectangle.height/2),
-                        new Point(rectangle.x+rectangle.width+5000000, rectangle.y+rectangle.height/2),
-                        new Scalar(0,0,255),8);
+                Log.e("anchura", rectangle.height + "");
+                double intervalo = rectangle.height / 6.0;
+                Imgproc.circle(src, new Point(rectangle.x+rectangle.width+400, rectangle.y+intervalo*4),40, new Scalar(166,119,249),-1);
+                Imgproc.circle(src, new Point(rectangle.x+rectangle.width+400,rectangle.y+intervalo*3),40, new Scalar(210,192,93),-1);
+                Imgproc.circle(src, new Point(rectangle.x+rectangle.width+400,rectangle.y+intervalo*2),40, new Scalar(94,212,246),-1);
+
+                // DEBUG
+//                Imgproc.line(src,
+//                        new Point(rectangle.x, rectangle.y+rectangle.height/2),
+//                        new Point(rectangle.x+rectangle.width+5000000, rectangle.y+rectangle.height/2),
+//                        new Scalar(0,0,255),8);
             }
         }
 
