@@ -2,14 +2,19 @@ package com.example.pitchdetection;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.example.pitchdetection.services.ChordRecognitionService;
+import com.example.pitchdetection.services.ChordRecognitionService.ChordRecognitionBinder;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -55,6 +60,21 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     NoteNameEnum chord_name  = NoteNameEnum.A;
     ChordTypeEnum chord_type = ChordTypeEnum.Major;
     int [] chord             = new int [2];
+    ChordRecognitionService service;
+    boolean connected = false;
+    private ServiceConnection connection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            ChordRecognitionBinder binder = (ChordRecognitionBinder) iBinder;
+            service = binder.getService();
+            connected = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            connected = false;
+        }
+    };
 
     /*
      * VARIABLES DE LAS LECCIONES
@@ -96,10 +116,24 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 }
             }
         };
+    }
 
+    @Override
+    public void onStart() {
+        super.onStart();
         //Asociar el service para ir escuchando las frecuencias
-//        Intent service_intent = new Intent(this, ChordRecognitionService.class);
-//        startService(service_intent);
+        Intent service_intent = new Intent(this, ChordRecognitionService.class);
+        bindService(service_intent, connection, Context.BIND_AUTO_CREATE);
+        startService(service_intent);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        unbindService(connection);
+        connected = false;
+        Intent service_intent = new Intent(this, ChordRecognitionService.class);
+        stopService(service_intent);
     }
 
     @Override
@@ -110,8 +144,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        //chord = ChordRecognitionService.getInstance().chord();
-        //translateChord();
+        chord = service.getChord();
+        translateChord();
+        Log.e("Acorde: ", chord_name.toString() + " " + chord_type.toString());
 
         // Obtener frame en color
         src = inputFrame.rgba();
