@@ -13,6 +13,7 @@ import android.view.SurfaceView;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import com.example.pitchdetection.lessons.Lesson;
 import com.example.pitchdetection.services.ChordRecognitionService;
 import com.example.pitchdetection.services.ChordRecognitionService.ChordRecognitionBinder;
 
@@ -82,6 +83,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     // TODO: como planear las clases
     ArrayList<NoteNameEnum> chords_to_play;
     ArrayList<ChordTypeEnum> chords_types_to_play;
+    private Lesson info;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,6 +125,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         super.onStart();
         //Asociar el service para ir escuchando las frecuencias
         Intent service_intent = new Intent(this, ChordRecognitionService.class);
+        bindService(service_intent, connection, Context.BIND_AUTO_CREATE);
         bindService(service_intent, connection, Context.BIND_AUTO_CREATE);
         startService(service_intent);
     }
@@ -170,12 +173,10 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             // Descartar los contornos que no son rectangulos y con boundingRect conseguir los elementos distintivos
             if(Math.abs(area)>= min_area && n_vertices == 4 && n_vertices <= 6) {
                 rectangle = Imgproc.boundingRect(contour);
-
-                Log.e("anchura", rectangle.height + "");
                 double intervalo = rectangle.height / 6.0;
-                Imgproc.circle(src, new Point(rectangle.x+rectangle.width+400, rectangle.y+intervalo*4),40, new Scalar(166,119,249),-1);
-                Imgproc.circle(src, new Point(rectangle.x+rectangle.width+400,rectangle.y+intervalo*3),40, new Scalar(210,192,93),-1);
-                Imgproc.circle(src, new Point(rectangle.x+rectangle.width+400,rectangle.y+intervalo*2),40, new Scalar(94,212,246),-1);
+                Imgproc.circle(src, new Point(rectangle.x+rectangle.width+100, rectangle.y+intervalo*4),40, new Scalar(166,119,249),-1);
+                Imgproc.circle(src, new Point(rectangle.x+rectangle.width+100,rectangle.y+intervalo*3),40, new Scalar(210,192,93),-1);
+                Imgproc.circle(src, new Point(rectangle.x+rectangle.width+100,rectangle.y+intervalo*2),40, new Scalar(94,212,246),-1);
 
                 // DEBUG
 //                Imgproc.line(src,
