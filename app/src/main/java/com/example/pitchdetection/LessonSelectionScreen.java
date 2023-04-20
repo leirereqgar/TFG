@@ -10,14 +10,14 @@ import android.widget.Button;
 
 import java.util.ArrayList;
 
-public class LessonsScreen extends AppCompatActivity {
+public class LessonSelectionScreen extends AppCompatActivity {
     private static int n_lessons = 4;
     private ArrayList<Button> buttons;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_lessons_screen);
+        setContentView(R.layout.activity_lessons_selection_screen);
 
         setUpCarousel();
 
@@ -27,14 +27,15 @@ public class LessonsScreen extends AppCompatActivity {
             buttons.get(i).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    startLesson();
+                    startLesson("Major");
                 }
             });
         }
     }
 
-    private void startLesson() {
+    private void startLesson(String extra) {
         Intent change = new Intent(this, LessonActivity.class);
+        change.putExtra("lesson", extra);
         startActivity(change);
     }
 

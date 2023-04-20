@@ -2,6 +2,7 @@ package com.example.pitchdetection;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -13,7 +14,11 @@ import android.view.SurfaceView;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import com.example.pitchdetection.lessons.Chord;
 import com.example.pitchdetection.lessons.Lesson;
+import com.example.pitchdetection.lessons.Major;
+import com.example.pitchdetection.lessons.Minor;
+import com.example.pitchdetection.lessons.Note;
 import com.example.pitchdetection.services.ChordRecognitionService;
 import com.example.pitchdetection.services.ChordRecognitionService.ChordRecognitionBinder;
 
@@ -43,11 +48,15 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     CameraBridgeViewBase camera_bridge_view;
     BaseLoaderCallback base_loader_callback;
 
-    // Imagen original, en hsv y solo con color amarillo
+    // Imagen original, en hsv y solo con color amarillo: para el marcador
     Mat src, hsv, yellow;
 
-    // Almacena los valores del rectangulo (esquina superior, ancho y alto)
+    // Imagen en escala de grises y matrices para los trastes:
+    Mat gray, dst, lines;
+
+    // Almacena los valores del marcador (esquina superior, ancho y alto)
     Rect rectangle;
+    Boolean marker_found = false;
 
     // Limites superior e inferior del color amarillo en el espacio hsv
     Scalar high_limit, low_limit;
@@ -57,7 +66,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     /*
      * VARIABLES PARA LOS ACORDES
      */
-    // TODO: recibir datos del servicio y traducirlos a enums
     NoteNameEnum chord_name  = NoteNameEnum.A;
     ChordTypeEnum chord_type = ChordTypeEnum.Major;
     int [] chord             = new int [2];
@@ -84,6 +92,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     ArrayList<NoteNameEnum> chords_to_play;
     ArrayList<ChordTypeEnum> chords_types_to_play;
     private Lesson info;
+    Bundle extras;
+    String lesson_name;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,14 +101,25 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         setContentView(R.layout.activity_lesson);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
+        extras = getIntent().getExtras();
+        lesson_name = extras.getString("lesson");
+        switch (lesson_name) {
+            case "Major":
+                info = new Major();
+                break;
+            case "Minor":
+                info = new Minor();
+                break;
+        }
+
         camera_bridge_view = findViewById(R.id.cameraViewer);
         camera_bridge_view.setVisibility(SurfaceView.VISIBLE);
         //Descomentar para camara frontal
         camera_bridge_view.setCameraIndex(1); //DEBUG
         camera_bridge_view.setCvCameraViewListener(this);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); //Mantener pantalla encendida para que no entre en suspension
 
-        //create camera listener callback
+        //Crear listener para la camara
         base_loader_callback = new BaseLoaderCallback(this) {
             @Override
             public void onManagerConnected(int status) {
@@ -107,6 +128,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                         src = new Mat();
                         hsv = new Mat();
                         yellow = new Mat();
+                        gray = new Mat();
+                        lines = new Mat();
                         high_limit = new Scalar(100,255,255);
                         low_limit = new Scalar(80,100,100);
                         camera_bridge_view.enableView();
@@ -133,6 +156,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     @Override
     public void onStop() {
         super.onStop();
+        //Desasociar el servicio para evitar errores en un futuro
         unbindService(connection);
         connected = false;
         Intent service_intent = new Intent(this, ChordRecognitionService.class);
@@ -149,12 +173,30 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         chord = service.getChord();
         translateChord();
-        Log.e("Acorde: ", chord_name.toString() + " " + chord_type.toString());
+        //Log.e("Acorde: ", chord_name.toString() + " " + chord_type.toString());
 
-        // Obtener frame en color
+        // Obtener frame en color, se usara dentro de las funciones
         src = inputFrame.rgba();
         // Voltear la imagen en el eje y para que actue como un espejo
-        Core.flip(src, src, 1);  //DEBUG
+        Core.flip(src, src, 1);
+
+        findMarker();
+
+        // Encontrar los trastes buscando las lineas paralelas a el lado del marcador.
+        if(marker_found) {
+            Log.i("Angulo marcador", (calcMarkerAngle(rectangle.x+ rectangle.width, rectangle.y,
+                    rectangle.x + rectangle.width, rectangle.y + rectangle.height)*180/Math.PI) + "");
+            //detectParallelLines();
+        }
+        else {
+            Log.i("Marcador", "no encontrado");
+        }
+
+
+        return src;
+    }
+
+    private void findMarker() {
         // Convertir al espacio de color hsv
         Imgproc.cvtColor(src, hsv, Imgproc.COLOR_BGR2HSV);
         // Con los limites definidos, aislar el color amarillo de la imagen
@@ -171,24 +213,119 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             double area = Imgproc.contourArea(contour);
 
             // Descartar los contornos que no son rectangulos y con boundingRect conseguir los elementos distintivos
-            if(Math.abs(area)>= min_area && n_vertices == 4 && n_vertices <= 6) {
+            if(Math.abs(area)>= min_area && n_vertices == 4) {
                 rectangle = Imgproc.boundingRect(contour);
-                double intervalo = rectangle.height / 6.0;
-                Imgproc.circle(src, new Point(rectangle.x+rectangle.width+100, rectangle.y+intervalo*4),40, new Scalar(166,119,249),-1);
-                Imgproc.circle(src, new Point(rectangle.x+rectangle.width+100,rectangle.y+intervalo*3),40, new Scalar(210,192,93),-1);
-                Imgproc.circle(src, new Point(rectangle.x+rectangle.width+100,rectangle.y+intervalo*2),40, new Scalar(94,212,246),-1);
-
+                marker_found = true;
                 // DEBUG
-//                Imgproc.line(src,
-//                        new Point(rectangle.x, rectangle.y+rectangle.height/2),
-//                        new Point(rectangle.x+rectangle.width+5000000, rectangle.y+rectangle.height/2),
-//                        new Scalar(0,0,255),8);
+                Imgproc.line(src,
+                        new Point(rectangle.x+ rectangle.width, rectangle.y),
+                        new Point(rectangle.x+rectangle.width, rectangle.y+rectangle.height),
+                        new Scalar(0,0,255),8);
             }
         }
-
-        return src;
     }
 
+    private void detectParallelLines() {
+        double p_marcador = calcMarkerAngle(rectangle.x+ rectangle.width, rectangle.y,
+                                        rectangle.x + rectangle.width, rectangle.y + rectangle.height);
+        // Declare the output variables
+        dst = new Mat();
+        // Load an image
+        Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY);
+        // Edge detection
+        Imgproc.Canny(gray, dst, 50, 200, 3, false);
+        // Standard Hough Line Transform
+        Imgproc.HoughLines(dst, lines, 1, Math.PI/180, 150); // runs the actual detection
+        // Draw the lines
+        for (int x = 0; x < lines.rows(); x++) {
+            double rho = lines.get(x, 0)[0],
+                    theta = lines.get(x, 0)[1];
+            double a = Math.cos(theta), b = Math.sin(theta);
+            double x0 = a*rho, y0 = b*rho;
+            double pendiente = calcMarkerAngle(Math.round(x0 + 1000*(-b)), Math.round(y0 + 1000*(a)),
+                    Math.round(x0 - 1000*(-b)), Math.round(y0 - 1000*(a)));
+
+            Log.i("Pendiente marcador", p_marcador + "");
+            if(comparar(p_marcador, pendiente))
+                Log.i("pendiente recta", pendiente + "");
+//            Point pt1 = new Point(Math.round(x0 + 1000*(-b)), Math.round(y0 + 1000*(a)));
+//            Point pt2 = new Point(Math.round(x0 - 1000*(-b)), Math.round(y0 - 1000*(a)));
+//            Imgproc.line(src, pt1, pt2, new Scalar(0, 0, 255), 3, Imgproc.LINE_AA, 0);
+        }
+//        // Probabilistic Line Transform
+//        Mat linesP = new Mat(); // will hold the results of the detection
+//        Imgproc.HoughLinesP(dst, linesP, 1, Math.PI/180, 50, 50, 10); // runs the actual detection
+//        // Draw the lines
+//        for (int x = 0; x < linesP.rows(); x++) {
+//            double[] l = linesP.get(x, 0);
+//            Imgproc.line(cdstP, new Point(l[0], l[1]), new Point(l[2], l[3]), new Scalar(0, 0, 255), 3, Imgproc.LINE_AA, 0);
+//        }
+//        double angle = Math.atan(rectangle.y / rectangle.x);
+//        Mat lines = new Mat();
+//        ArrayList<double[]> drawnLines = new ArrayList<>();
+//        Imgproc.HoughLines(img, lines, 1, Math.PI/180, 100,0,0,345*Math.PI/180,360*Math.PI/180);
+//        Imgproc.HoughLinesP(edges, lines, 1,Math.PI/180,200, 200,100);
+//        for (int i = 0; i < lines.rows(); i++) {
+//            double[] data = lines.get(i, 0);
+//            double rho = data[0];
+//            double theta = data[1];
+//            if((angle-5) <= theta || theta <= (angle+5))
+//                Log.e("linea", data.toString());
+//            double a = Math.cos(theta);
+//            double b = Math.sin(theta);
+//            double x0 = a*rho;
+//            double y0 = b*rho;
+//            //Drawing lines on the image
+//            Point pt1 = new Point();
+//            Point pt2 = new Point();
+//
+//            pt1.x = Math.round(x0 + 1000*(-b));
+//            pt1.y = Math.round(y0 + 1000*(a));
+//            pt2.x = Math.round(x0 - 1000*(-b));
+//            pt2.y = Math.round(y0 - 1000 *(a));
+//            Imgproc.line(src, pt1, pt2, new Scalar(0, 0, 255), 3);
+
+//            double dx = data[3] - data[1];
+//            double dy = data[2] - data[0];
+//            double theta = Math.atan2(dy, dx);
+//
+//            boolean continuar = true;
+//            for (int j = 0; j < drawnLines.size() && continuar; j++) {
+//                double [] l = drawnLines.get(j);
+//                if (Math.abs(data[1] - l[1]) < 8 || Math.abs(data[3] - l[3]) < 8) {
+//                    continuar = false;
+//                }
+//            }
+////
+//            if(continuar && (theta > 345 && theta < 360)) {
+//                drawnLines.add(data);
+//            }
+//        }
+//
+//        for (int i = 0; i < drawnLines.size(); i++) {
+//            Imgproc.line(src, new Point(drawnLines.get(i)[0], drawnLines.get(i)[1]),
+//                    new Point(drawnLines.get(i)[2], drawnLines.get(i)[3]), new Scalar(0,0,255),3);
+//        }
+
+    }
+
+    private double calcMarkerAngle(double x1, double y1, double x2, double y2) {
+        double pendiente = 0;
+
+        pendiente = (y2 - y1) / (x2 - x1);
+
+        return Math.atan(pendiente);
+    }
+
+    private boolean comparar(double p1, double p2) {
+        boolean equals = false;
+
+        if (Double.compare(p1, p2) == 0){
+            equals = true;
+        }
+
+        return equals;
+    }
     @Override
     protected void onPause() {
         super.onPause();
@@ -220,7 +357,25 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         chord_type = ChordTypeEnum.fromInteger(chord[1]);
     }
 
-    private void drawChord() {
+    private void drawChord(Chord c, Mat src) {
+        for (int i = 0; i < c.size(); i++) {
+            drawNote(c.get(i), src);
+        }
+    }
 
+    private void drawNote(Note n, Mat src) {
+        int x = rectangle.x + rectangle.width;
+        int y = rectangle.y;
+
+        double interval = rectangle.height / 6.0;
+
+        Imgproc.circle(src,
+                new Point(x + calcFretDistance(n.getFret()),
+                          y + interval * n.getString()),
+                40, new Scalar(166,119,249),-1);
+    }
+
+    private double calcFretDistance(int n) {
+        return 650 - (650 / Math.pow(2, n/12.0));
     }
 }
