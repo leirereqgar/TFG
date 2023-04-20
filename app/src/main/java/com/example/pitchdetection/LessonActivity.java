@@ -53,6 +53,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
     // Imagen en escala de grises y matrices para los trastes:
     Mat gray, dst, lines;
+    ArrayList<double[]> frets;
 
     // Almacena los valores del marcador (esquina superior, ancho y alto)
     Rect rectangle;
@@ -130,6 +131,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                         yellow = new Mat();
                         gray = new Mat();
                         lines = new Mat();
+                        frets = new ArrayList<>();
                         high_limit = new Scalar(100,255,255);
                         low_limit = new Scalar(80,100,100);
                         camera_bridge_view.enableView();
@@ -184,9 +186,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
         // Encontrar los trastes buscando las lineas paralelas a el lado del marcador.
         if(marker_found) {
-            Log.i("Angulo marcador", (calcMarkerAngle(rectangle.x+ rectangle.width, rectangle.y,
-                    rectangle.x + rectangle.width, rectangle.y + rectangle.height)*180/Math.PI) + "");
-            //detectParallelLines();
+//            Log.i("Angulo marcador", (calcMarkerAngle(rectangle.x+ rectangle.width, rectangle.y,
+//                    rectangle.x + rectangle.width, rectangle.y + rectangle.height)*180/Math.PI) + "");
+            detectParallelLines();
         }
         else {
             Log.i("Marcador", "no encontrado");
@@ -237,20 +239,18 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         // Standard Hough Line Transform
         Imgproc.HoughLines(dst, lines, 1, Math.PI/180, 150); // runs the actual detection
         // Draw the lines
-        for (int x = 0; x < lines.rows(); x++) {
-            double rho = lines.get(x, 0)[0],
-                    theta = lines.get(x, 0)[1];
+        for (int i = 0; i < lines.rows(); i++) {
+            double rho = lines.get(i, 0)[0],
+                    theta = lines.get(i, 0)[1];
             double a = Math.cos(theta), b = Math.sin(theta);
             double x0 = a*rho, y0 = b*rho;
-            double pendiente = calcMarkerAngle(Math.round(x0 + 1000*(-b)), Math.round(y0 + 1000*(a)),
-                    Math.round(x0 - 1000*(-b)), Math.round(y0 - 1000*(a)));
-
-            Log.i("Pendiente marcador", p_marcador + "");
-            if(comparar(p_marcador, pendiente))
-                Log.i("pendiente recta", pendiente + "");
-//            Point pt1 = new Point(Math.round(x0 + 1000*(-b)), Math.round(y0 + 1000*(a)));
-//            Point pt2 = new Point(Math.round(x0 - 1000*(-b)), Math.round(y0 - 1000*(a)));
-//            Imgproc.line(src, pt1, pt2, new Scalar(0, 0, 255), 3, Imgproc.LINE_AA, 0);
+            if (compare(p_marcador, theta)){
+                System.out.println("iguales");
+                frets.add(new double[]{x0, y0});
+                Point pt1 = new Point(Math.round(x0 + 1000*(-b)), Math.round(y0 + 1000*(a)));
+                Point pt2 = new Point(Math.round(x0 - 1000*(-b)), Math.round(y0 - 1000*(a)));
+                Imgproc.line(src, pt1, pt2, new Scalar(0, 255, 0), 3, Imgproc.LINE_AA, 0);
+            }
         }
 //        // Probabilistic Line Transform
 //        Mat linesP = new Mat(); // will hold the results of the detection
@@ -317,12 +317,11 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         return Math.atan(pendiente);
     }
 
-    private boolean comparar(double p1, double p2) {
+    private boolean compare(double p1, double p2) {
         boolean equals = false;
+        double tolerance = 15 * Math.PI / 180;
 
-        if (Double.compare(p1, p2) == 0){
-            equals = true;
-        }
+        equals = Math.abs(p1-p2) >= tolerance;
 
         return equals;
     }
