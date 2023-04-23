@@ -2,7 +2,6 @@ package com.example.pitchdetection;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -36,6 +35,8 @@ import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import enums.ChordTypeEnum;
@@ -190,9 +191,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 //                    rectangle.x + rectangle.width, rectangle.y + rectangle.height)*180/Math.PI) + "");
             detectParallelLines();
         }
-        else {
-            Log.i("Marcador", "no encontrado");
-        }
 
 
         return src;
@@ -228,7 +226,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     }
 
     private void detectParallelLines() {
-        double p_marcador = calcMarkerAngle(rectangle.x+ rectangle.width, rectangle.y,
+        double alfa = calcMarkerAngle(rectangle.x+ rectangle.width, rectangle.y,
                                         rectangle.x + rectangle.width, rectangle.y + rectangle.height);
         // Declare the output variables
         dst = new Mat();
@@ -239,12 +237,13 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         // Standard Hough Line Transform
         Imgproc.HoughLines(dst, lines, 1, Math.PI/180, 150); // runs the actual detection
         // Draw the lines
+        frets = new ArrayList<>();
         for (int i = 0; i < lines.rows(); i++) {
             double rho = lines.get(i, 0)[0],
                     theta = lines.get(i, 0)[1];
             double a = Math.cos(theta), b = Math.sin(theta);
             double x0 = a*rho, y0 = b*rho;
-            if (compare(p_marcador, theta)){
+            if (compareAngle(alfa, theta)){
                 System.out.println("iguales");
                 frets.add(new double[]{x0, y0});
                 Point pt1 = new Point(Math.round(x0 + 1000*(-b)), Math.round(y0 + 1000*(a)));
@@ -252,6 +251,23 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 Imgproc.line(src, pt1, pt2, new Scalar(0, 255, 0), 3, Imgproc.LINE_AA, 0);
             }
         }
+
+        Collections.sort(frets, new Comparator<double[]>() {
+            @Override
+            public int compare(double[] d1, double[] d2) {
+                return Double.compare(d1[0], d2[0]);
+            }
+        });
+        Log.i("Antes de eliminar", frets.size()+"");
+//
+//        for (int i = 0, j = 1; i < frets.size(); i++) {
+//            while(Math.abs(frets.get(j)[0]-frets.get(i)[0]) < 0.5){
+//                frets.remove(j);
+//                j++;
+//            }
+//        }
+//        Log.i("Despues de eliminar", frets.size()+"");
+
 //        // Probabilistic Line Transform
 //        Mat linesP = new Mat(); // will hold the results of the detection
 //        Imgproc.HoughLinesP(dst, linesP, 1, Math.PI/180, 50, 50, 10); // runs the actual detection
@@ -317,9 +333,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         return Math.atan(pendiente);
     }
 
-    private boolean compare(double p1, double p2) {
+    private boolean compareAngle(double p1, double p2) {
         boolean equals = false;
-        double tolerance = 15 * Math.PI / 180;
+        double tolerance = 45 * Math.PI / 180;
 
         equals = Math.abs(p1-p2) >= tolerance;
 
