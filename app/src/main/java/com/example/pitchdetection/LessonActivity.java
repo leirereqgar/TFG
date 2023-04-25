@@ -235,6 +235,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         // Edge detection
         Imgproc.Canny(gray, dst, 50, 200, 3, false);
         // Standard Hough Line Transform
+        // Para mejorar performance mirar hacerlo con la probabilistica
         Imgproc.HoughLines(dst, lines, 1, Math.PI/180, 150); // runs the actual detection
         // Draw the lines
         frets = new ArrayList<>();
@@ -243,12 +244,23 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                     theta = lines.get(i, 0)[1];
             double a = Math.cos(theta), b = Math.sin(theta);
             double x0 = a*rho, y0 = b*rho;
+            System.out.println(x0 + "    " + y0);
             if (compareAngle(alfa, theta)){
                 System.out.println("iguales");
-                frets.add(new double[]{x0, y0});
-                Point pt1 = new Point(Math.round(x0 + 1000*(-b)), Math.round(y0 + 1000*(a)));
-                Point pt2 = new Point(Math.round(x0 - 1000*(-b)), Math.round(y0 - 1000*(a)));
-                Imgproc.line(src, pt1, pt2, new Scalar(0, 255, 0), 3, Imgproc.LINE_AA, 0);
+                boolean add = true;
+                for (int j = 0; j < frets.size() && add; j++) {
+                    if (Math.abs(frets.get(j)[0] - x0) < 100) {
+                        add = false;
+                    }
+                }
+
+                if (add){
+                    System.out.println("Añadir l�nea");
+                    frets.add(new double[]{x0, y0});
+                    Point pt1 = new Point(Math.round(x0 + 1000 * (-b)), Math.round(y0 + 1000 * (a)));
+                    Point pt2 = new Point(Math.round(x0 - 1000 * (-b)), Math.round(y0 - 1000 * (a)));
+                    Imgproc.line(src, pt1, pt2, new Scalar(0, 255, 0), 3, Imgproc.LINE_AA, 0);
+                }
             }
         }
 
@@ -258,71 +270,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 return Double.compare(d1[0], d2[0]);
             }
         });
-        Log.i("Antes de eliminar", frets.size()+"");
-//
-//        for (int i = 0, j = 1; i < frets.size(); i++) {
-//            while(Math.abs(frets.get(j)[0]-frets.get(i)[0]) < 0.5){
-//                frets.remove(j);
-//                j++;
-//            }
-//        }
-//        Log.i("Despues de eliminar", frets.size()+"");
 
-//        // Probabilistic Line Transform
-//        Mat linesP = new Mat(); // will hold the results of the detection
-//        Imgproc.HoughLinesP(dst, linesP, 1, Math.PI/180, 50, 50, 10); // runs the actual detection
-//        // Draw the lines
-//        for (int x = 0; x < linesP.rows(); x++) {
-//            double[] l = linesP.get(x, 0);
-//            Imgproc.line(cdstP, new Point(l[0], l[1]), new Point(l[2], l[3]), new Scalar(0, 0, 255), 3, Imgproc.LINE_AA, 0);
-//        }
-//        double angle = Math.atan(rectangle.y / rectangle.x);
-//        Mat lines = new Mat();
-//        ArrayList<double[]> drawnLines = new ArrayList<>();
-//        Imgproc.HoughLines(img, lines, 1, Math.PI/180, 100,0,0,345*Math.PI/180,360*Math.PI/180);
-//        Imgproc.HoughLinesP(edges, lines, 1,Math.PI/180,200, 200,100);
-//        for (int i = 0; i < lines.rows(); i++) {
-//            double[] data = lines.get(i, 0);
-//            double rho = data[0];
-//            double theta = data[1];
-//            if((angle-5) <= theta || theta <= (angle+5))
-//                Log.e("linea", data.toString());
-//            double a = Math.cos(theta);
-//            double b = Math.sin(theta);
-//            double x0 = a*rho;
-//            double y0 = b*rho;
-//            //Drawing lines on the image
-//            Point pt1 = new Point();
-//            Point pt2 = new Point();
-//
-//            pt1.x = Math.round(x0 + 1000*(-b));
-//            pt1.y = Math.round(y0 + 1000*(a));
-//            pt2.x = Math.round(x0 - 1000*(-b));
-//            pt2.y = Math.round(y0 - 1000 *(a));
-//            Imgproc.line(src, pt1, pt2, new Scalar(0, 0, 255), 3);
-
-//            double dx = data[3] - data[1];
-//            double dy = data[2] - data[0];
-//            double theta = Math.atan2(dy, dx);
-//
-//            boolean continuar = true;
-//            for (int j = 0; j < drawnLines.size() && continuar; j++) {
-//                double [] l = drawnLines.get(j);
-//                if (Math.abs(data[1] - l[1]) < 8 || Math.abs(data[3] - l[3]) < 8) {
-//                    continuar = false;
-//                }
-//            }
-////
-//            if(continuar && (theta > 345 && theta < 360)) {
-//                drawnLines.add(data);
-//            }
-//        }
-//
-//        for (int i = 0; i < drawnLines.size(); i++) {
-//            Imgproc.line(src, new Point(drawnLines.get(i)[0], drawnLines.get(i)[1]),
-//                    new Point(drawnLines.get(i)[2], drawnLines.get(i)[3]), new Scalar(0,0,255),3);
-//        }
-
+        // Eliminar lineas detectadas a la "izquierda" del marcador
+        for (int i = 0; i < frets.size(); i++) {
+            if(Double.compare(rectangle.x+ rectangle.width, frets.get(i)[0]) < 0)
+                frets.remove(i);
+        }
     }
 
     private double calcMarkerAngle(double x1, double y1, double x2, double y2) {
@@ -335,7 +288,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
     private boolean compareAngle(double p1, double p2) {
         boolean equals = false;
-        double tolerance = 45 * Math.PI / 180;
+        double tolerance = 75 * Math.PI / 180;
 
         equals = Math.abs(p1-p2) >= tolerance;
 
