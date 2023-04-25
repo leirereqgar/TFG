@@ -69,7 +69,7 @@ public class HomeScreen extends AppCompatActivity {
     }
 
     private void goToLessons() {
-        Intent change = new Intent(this, LessonsScreen.class);
+        Intent change = new Intent(this, LessonSelectionScreen.class);
         startActivity(change);
     }
 
