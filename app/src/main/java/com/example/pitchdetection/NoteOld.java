@@ -1,15 +1,15 @@
 package com.example.pitchdetection;
 
-public class Note {
+public class NoteOld {
     private float pitch;
     private String name;
 
-    public Note(float p, String n) {
+    public NoteOld(float p, String n) {
         this.pitch = p;
         this.name = n;
     }
 
-    public boolean checkPitch(Note posterior, Note anterior, float p) {
+    public boolean checkPitch(NoteOld posterior, NoteOld anterior, float p) {
         boolean in_range = false;
 
         if (anterior.getPitch() < p && pitch <= p && p < posterior.getPitch())

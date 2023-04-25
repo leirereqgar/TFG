@@ -9,11 +9,15 @@ public class Chord {
         note_array = new ArrayList<>();
     }
 
-    public Note getNote(int i) {
+    public Note get(int i) {
         return note_array.get(i);
     }
 
     public void add(Note n) {
         note_array.add(n);
+    }
+
+    public int size() {
+        return note_array.size();
     }
 }

@@ -41,14 +41,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        boton = findViewById(R.id.button);
-        boton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                switchActivity();
-            }
-        });
-
         // Creamos un AudioDispatcher asociado al micrófono por defecto, obtenido en tiempo de ejecución por
         // la llamada AudioSystem.getTargetDataLine(format)
         //
@@ -108,10 +100,5 @@ public class MainActivity extends AppCompatActivity {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-    }
-
-    private void switchActivity() {
-        Intent cambio = new Intent(this, ChordDectectionActivity.class);
-        startActivity(cambio);
     }
 }
