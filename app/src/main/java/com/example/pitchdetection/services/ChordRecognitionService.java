@@ -43,8 +43,6 @@ public class ChordRecognitionService extends Service {
     public int onStartCommand(Intent i, int flags, int ID){
         audio_samples_buffer        = new double[BUFFER_SIZE];
         audio_samples_buffer_window = new double[BUFFER_SIZE];
-
-        //TODO: programar el reconocimiento de acordes
         new Thread(
                 new Runnable() {
                     @Override
