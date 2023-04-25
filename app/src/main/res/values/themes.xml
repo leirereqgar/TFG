@@ -27,6 +27,11 @@
         <item name="android:background">@color/background</item>
     </style>
 
+    <style name="Theme.GuitAR.FullScreen" parent="Theme.GuitAR">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
     <style name="Widget.GuitAR.Toolbar" parent="Widget.AppCompat.Toolbar">
         <item name="android:background">?attr/colorAccent</item>
         <item name="android:theme">@style/Theme.GuitAR</item>

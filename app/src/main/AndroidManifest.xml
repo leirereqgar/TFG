@@ -39,7 +39,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".LessonsScreen"
+            android:name=".LessonSelectionScreen"
             android:exported="false"
             android:screenOrientation="landscape" />
         <activity
