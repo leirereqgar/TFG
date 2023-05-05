@@ -87,3 +87,6 @@ lint/tmp/
 
 #opencv lib
 *.so
+app/src/main/jni/arm*
+app/src/main/jni/mip*
+app/src/main/jni/x86*
