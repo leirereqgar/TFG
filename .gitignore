@@ -83,3 +83,9 @@ lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
+
+
+#opencv lib
+app/src/main/jni/arm*
+app/src/main/jni/mip*
+app/src/main/jni/x86*
