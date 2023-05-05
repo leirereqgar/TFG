@@ -1,18 +1,19 @@
 package com.example.pitchdetection;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.Log;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.pitchdetection.enums.ChordTypeEnum;
+import com.example.pitchdetection.enums.NoteNameEnum;
 import com.example.pitchdetection.lessons.Chord;
 import com.example.pitchdetection.lessons.Lesson;
 import com.example.pitchdetection.lessons.Major;
@@ -38,9 +39,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
-import enums.ChordTypeEnum;
-import enums.NoteNameEnum;
 
 public class LessonActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
     /*
@@ -192,6 +190,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             detectParallelLines();
         }
 
+        if(marker_found && frets.size() > 1)
+            drawNote(info.getChord(0).get(0));
+
 
         return src;
     }
@@ -226,18 +227,25 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     }
 
     private void detectParallelLines() {
-        double alfa = calcMarkerAngle(rectangle.x+ rectangle.width, rectangle.y,
+        //Calcular el angulo del lado del marcador
+        double alfa = calcAngle(rectangle.x+ rectangle.width, rectangle.y,
                                         rectangle.x + rectangle.width, rectangle.y + rectangle.height);
-        // Declare the output variables
+        /*
+        * 1.- Se inicializa donde se guardara el resultado
+        * 2.- Se transforma el frame original (src) a banco y negro
+        * 3.- Se aplica la funcion Canny para encontrar los borden en la imagen
+        * 4.- Se ejecuta HoughLines para quedarnos solo con las lineas rectas
+         */
         dst = new Mat();
-        // Load an image
         Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY);
-        // Edge detection
         Imgproc.Canny(gray, dst, 50, 200, 3, false);
-        // Standard Hough Line Transform
         // Para mejorar performance mirar hacerlo con la probabilistica
         Imgproc.HoughLines(dst, lines, 1, Math.PI/180, 150); // runs the actual detection
-        // Draw the lines
+
+        /*
+        * Una vez con todas las lineas detectadas se procesa la informacion para eliminar datos
+        * innecesarios
+         */
         frets = new ArrayList<>();
         for (int i = 0; i < lines.rows(); i++) {
             double rho = lines.get(i, 0)[0],
@@ -245,8 +253,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             double a = Math.cos(theta), b = Math.sin(theta);
             double x0 = a*rho, y0 = b*rho;
             System.out.println(x0 + "    " + y0);
+
+            // Solo plantearse añadir la linea a los trastes si es paralela al marcador
             if (compareAngle(alfa, theta)){
                 System.out.println("iguales");
+
+                // Comprobar si hay otra linea demasiado cerca, si no es el caso se acaba añadiendo
                 boolean add = true;
                 for (int j = 0; j < frets.size() && add; j++) {
                     if (Math.abs(frets.get(j)[0] - x0) < 100) {
@@ -255,7 +267,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 }
 
                 if (add){
-                    System.out.println("Añadir l�nea");
                     frets.add(new double[]{x0, y0});
                     Point pt1 = new Point(Math.round(x0 + 1000 * (-b)), Math.round(y0 + 1000 * (a)));
                     Point pt2 = new Point(Math.round(x0 - 1000 * (-b)), Math.round(y0 - 1000 * (a)));
@@ -264,6 +275,10 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             }
         }
 
+        /*
+        * Para seguir eliminando lineas no deseadas y dejarlo para dibujar la informacion se ordena
+        * el array de forma ascendente segun la coordenada x
+         */
         Collections.sort(frets, new Comparator<double[]>() {
             @Override
             public int compare(double[] d1, double[] d2) {
@@ -271,14 +286,22 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             }
         });
 
-        // Eliminar lineas detectadas a la "izquierda" del marcador
+        // Por ultimo, eliminar lineas detectadas a la "izquierda" del marcador
         for (int i = 0; i < frets.size(); i++) {
             if(Double.compare(rectangle.x+ rectangle.width, frets.get(i)[0]) < 0)
                 frets.remove(i);
         }
     }
 
-    private double calcMarkerAngle(double x1, double y1, double x2, double y2) {
+    /**
+     * caclAngle : calcula el angulo de la recta que forman los puntos
+     * @param x1 : coordenada x del primer punto
+     * @param y1 : coordenada y del primer punto
+     * @param x2 : coordenada x del segundo punto
+     * @param y2 : coordenada y del segundo punto
+     * @return   : angulo de la recta en radianes
+     */
+    private double calcAngle(double x1, double y1, double x2, double y2) {
         double pendiente = 0;
 
         pendiente = (y2 - y1) / (x2 - x1);
@@ -286,6 +309,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         return Math.atan(pendiente);
     }
 
+    /**
+     * compareAngle : comprueba si dos angulos son iguales
+     * @param p1    : angulo 1
+     * @param p2    : angulo 2
+     * @return      : true si son iguales, false si no
+     */
     private boolean compareAngle(double p1, double p2) {
         boolean equals = false;
         double tolerance = 75 * Math.PI / 180;
@@ -325,20 +354,20 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         chord_type = ChordTypeEnum.fromInteger(chord[1]);
     }
 
-    private void drawChord(Chord c, Mat src) {
+    private void drawChord(Chord c) {
         for (int i = 0; i < c.size(); i++) {
-            drawNote(c.get(i), src);
+            drawNote(c.get(i));
         }
     }
 
-    private void drawNote(Note n, Mat src) {
+    private void drawNote(Note n) {
         int x = rectangle.x + rectangle.width;
         int y = rectangle.y;
 
         double interval = rectangle.height / 6.0;
 
         Imgproc.circle(src,
-                new Point(x + calcFretDistance(n.getFret()),
+                new Point(x + frets.get(n.getFret())[0],
                           y + interval * n.getString()),
                 40, new Scalar(166,119,249),-1);
     }
