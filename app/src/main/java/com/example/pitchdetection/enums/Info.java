@@ -1,4 +1,4 @@
-package enums;
+package com.example.pitchdetection.enums;
 
 public enum Info {
     CHORD_NAME,

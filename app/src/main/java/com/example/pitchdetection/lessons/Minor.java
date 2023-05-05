@@ -1,11 +1,20 @@
 package com.example.pitchdetection.lessons;
 
-import enums.ChordTypeEnum;
+import com.example.pitchdetection.enums.ChordTypeEnum;
+
+import java.util.ArrayList;
 
 public class Minor extends Lesson{
+
+    public Minor() {
+        init();
+    }
+
     @Override
     public void init(){
         code = ChordTypeEnum.Minor;
+
+        chords = new ArrayList<>();
         
         Chord c_minor = new Chord();
         c_minor.add(new Note(0,3));

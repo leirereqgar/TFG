@@ -1,4 +1,4 @@
-package enums;
+package com.example.pitchdetection.enums;
 
 public enum Actions {
     START_RECORDING,

@@ -2,7 +2,7 @@ package com.example.pitchdetection.lessons;
 
 import java.util.ArrayList;
 
-import enums.ChordTypeEnum;
+import com.example.pitchdetection.enums.ChordTypeEnum;
 
 public abstract class Lesson {
     ChordTypeEnum code;
