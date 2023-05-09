@@ -14,11 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.pitchdetection.enums.ChordTypeEnum;
 import com.example.pitchdetection.enums.NoteNameEnum;
-import com.example.pitchdetection.lessons.Chord;
-import com.example.pitchdetection.lessons.Lesson;
-import com.example.pitchdetection.lessons.Major;
-import com.example.pitchdetection.lessons.Minor;
-import com.example.pitchdetection.lessons.Note;
+import com.example.pitchdetection.lessons.*;
 import com.example.pitchdetection.services.ChordRecognitionService;
 import com.example.pitchdetection.services.ChordRecognitionService.ChordRecognitionBinder;
 
@@ -63,6 +59,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     MatOfPoint2f approx_curve;
     double min_area = 500;
 
+    Thread marker_thread, frets_thread;
+
     /*
      * VARIABLES PARA LOS ACORDES
      */
@@ -94,6 +92,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     private Lesson info;
     Bundle extras;
     String lesson_name;
+    int index = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -191,8 +190,14 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         }
 
         if(marker_found && frets.size() > 1)
-            drawNote(info.getChord(0).get(0));
+            drawNote(info.getChord(index).get(0));
 
+        if(chord_name == info.getChord(index).getName() &&
+           chord_type == info.getChord(index).getType() &&
+           index < info.size())
+        {
+            index++;
+        }
 
         return src;
     }
@@ -221,7 +226,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 Imgproc.line(src,
                         new Point(rectangle.x+ rectangle.width, rectangle.y),
                         new Point(rectangle.x+rectangle.width, rectangle.y+rectangle.height),
-                        new Scalar(0,0,255),8);
+                        new Scalar(0,0,0),10);
             }
         }
     }

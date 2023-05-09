@@ -17,4 +17,8 @@ public abstract class Lesson {
     public Chord getChord(int i) {
         return chords.get(i);
     }
+
+    public int size() {
+        return chords.size();
+    }
 }

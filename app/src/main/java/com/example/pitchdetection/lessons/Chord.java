@@ -1,11 +1,18 @@
 package com.example.pitchdetection.lessons;
 
+import com.example.pitchdetection.enums.ChordTypeEnum;
+import com.example.pitchdetection.enums.NoteNameEnum;
+
 import java.util.ArrayList;
 
 public class Chord {
+    NoteNameEnum name;
+    ChordTypeEnum type;
     ArrayList<Note> note_array;
 
-    Chord(){
+    Chord(NoteNameEnum n, ChordTypeEnum t){
+        name = n;
+        type = t;
         note_array = new ArrayList<>();
     }
 
@@ -19,5 +26,13 @@ public class Chord {
 
     public int size() {
         return note_array.size();
+    }
+
+    public NoteNameEnum getName() {
+        return name;
+    }
+
+    public ChordTypeEnum getType() {
+        return type;
     }
 }
