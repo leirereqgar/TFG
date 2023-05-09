@@ -10,6 +10,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.example.pitchdetection.enums.ChordTypeEnum;
+
 import org.w3c.dom.Text;
 
 import java.lang.reflect.Array;
@@ -30,7 +32,7 @@ public class LessonSelectionScreen extends AppCompatActivity {
         buttons.get(0).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startLesson("Major");
+                startLesson(ChordTypeEnum.Major.toString());
             }
         });
 
@@ -38,7 +40,7 @@ public class LessonSelectionScreen extends AppCompatActivity {
         buttons.get(1).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startLesson("Minor");
+                startLesson(ChordTypeEnum.Minor.toString());
             }
         });
 
@@ -46,7 +48,7 @@ public class LessonSelectionScreen extends AppCompatActivity {
         buttons.get(2).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startLesson("Major");
+                startLesson(ChordTypeEnum.Suspended.toString());
             }
         });
 
@@ -54,11 +56,11 @@ public class LessonSelectionScreen extends AppCompatActivity {
         buttons.get(3).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startLesson("Major");
+                startLesson(ChordTypeEnum.Dominant.toString());
             }
         });
 
-        n_lessons = 4;
+        n_lessons = buttons.size();
 
         setUpCarousel();
 
