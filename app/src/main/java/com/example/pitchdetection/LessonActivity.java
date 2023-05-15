@@ -44,7 +44,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     BaseLoaderCallback base_loader_callback;
 
     // Imagen original, en hsv y solo con color amarillo: para el marcador
-    Mat src, hsv, yellow;
+    Mat src, hsv, blue_img;
 
     // Imagen en escala de grises y matrices para los trastes:
     Mat gray, dst, lines;
@@ -126,12 +126,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                     case LoaderCallbackInterface.SUCCESS:
                         src = new Mat();
                         hsv = new Mat();
-                        yellow = new Mat();
+                        blue_img = new Mat();
                         gray = new Mat();
                         lines = new Mat();
                         frets = new ArrayList<>();
-                        high_limit = new Scalar(100,255,255);
-                        low_limit = new Scalar(80,100,100);
+                        high_limit = new Scalar(45,255,255);
+                        low_limit = new Scalar(15,100,20);
                         camera_bridge_view.enableView();
                         approx_curve = new MatOfPoint2f();
                         break;
@@ -206,11 +206,11 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         // Convertir al espacio de color hsv
         Imgproc.cvtColor(src, hsv, Imgproc.COLOR_BGR2HSV);
         // Con los limites definidos, aislar el color amarillo de la imagen
-        Core.inRange(hsv, low_limit, high_limit, yellow);
+        Core.inRange(hsv, low_limit, high_limit, blue_img);
 
         // Extraer todos los contornos que se pueden encontrar
         List<MatOfPoint> contours = new ArrayList<>();
-        Imgproc.findContours(yellow, contours, new Mat(), Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
+        Imgproc.findContours(blue_img, contours, new Mat(), Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
 
         for (MatOfPoint contour : contours) {
             MatOfPoint2f curve = new MatOfPoint2f(contour.toArray());
