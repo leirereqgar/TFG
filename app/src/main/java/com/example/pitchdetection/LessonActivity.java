@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -173,7 +174,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         chord = service.getChord();
         translateChord();
-        //Log.e("Acorde: ", chord_name.toString() + " " + chord_type.toString());
+//        Log.e("Acorde: ", chord_name.toString() + " " + chord_type.toString());
+//        Log.e("Info: ", info.getChord(index).getName().toString() + " " +info.getChord(index).getType().toString());
 
         // Obtener frame en color, se usara dentro de las funciones
         src = inputFrame.rgba();
@@ -193,10 +195,10 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             drawNote(info.getChord(index).get(0));
 
         if(chord_name == info.getChord(index).getName() &&
-           chord_type == info.getChord(index).getType() &&
            index < info.size())
         {
             index++;
+//            System.out.println("Acorde correcto " + index);
         }
 
         return src;
@@ -257,11 +259,11 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                     theta = lines.get(i, 0)[1];
             double a = Math.cos(theta), b = Math.sin(theta);
             double x0 = a*rho, y0 = b*rho;
-            System.out.println(x0 + "    " + y0);
+            //System.out.println(x0 + "    " + y0);
 
             // Solo plantearse añadir la linea a los trastes si es paralela al marcador
             if (compareAngle(alfa, theta)){
-                System.out.println("iguales");
+                //System.out.println("iguales");
 
                 // Comprobar si hay otra linea demasiado cerca, si no es el caso se acaba añadiendo
                 boolean add = true;
