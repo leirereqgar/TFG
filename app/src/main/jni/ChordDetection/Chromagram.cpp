@@ -24,7 +24,7 @@
 
 //==================================================================================
 Chromagram::Chromagram (int frameSize, int fs)
-        :  referenceFrequency (110.0), //A2
+        :  referenceFrequency (130.81),
            bufferSize (8192), //It must be a power of 2
            numHarmonics (2),
            numOctaves (2),
