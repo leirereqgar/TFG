@@ -174,8 +174,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         chord = service.getChord();
         translateChord();
-//        Log.e("Acorde: ", chord_name.toString() + " " + chord_type.toString());
-//        Log.e("Info: ", info.getChord(index).getName().toString() + " " +info.getChord(index).getType().toString());
+        Log.e("Acorde: ", chord_name.toString() + " " + chord_type.toString());
+        Log.e("Info: ", info.getChord(index).getName().toString() + " " +info.getChord(index).getType().toString());
 
         // Obtener frame en color, se usara dentro de las funciones
         src = inputFrame.rgba();
@@ -188,7 +188,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         if(marker_found) {
 //            Log.i("Angulo marcador", (calcMarkerAngle(rectangle.x+ rectangle.width, rectangle.y,
 //                    rectangle.x + rectangle.width, rectangle.y + rectangle.height)*180/Math.PI) + "");
-            detectParallelLines();
+            //detectParallelLines();
         }
 
         if(marker_found && frets.size() > 1)
@@ -200,6 +200,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             index++;
 //            System.out.println("Acorde correcto " + index);
         }
+        Imgproc.putText(src, index+"", new Point(170,280), 0,1,new Scalar(255,0,0), 4);
 
         return src;
     }

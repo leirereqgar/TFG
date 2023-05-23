@@ -1,7 +1,14 @@
 package com.example.pitchdetection.enums;
 
 public enum NoteNameEnum {
-    A(0), A_SHARP(1),   B(2),  C(3), C_SHARP(4), D(5), D_SHARP(6), E(7), F(8), F_SHARP(9), G(10), G_SHARP(11), NO_NOTE(-1);
+    NO_NOTE(-1),
+    C(0),C_SHARP(1),
+    D(2),D_SHARP(3),
+    E(4),
+    F(5),F_SHARP(6),
+    G(7),G_SHARP(8),
+    A(9),A_SHARP(11),
+    B(11);
 
     private int value;
 
@@ -14,30 +21,29 @@ public enum NoteNameEnum {
     public static NoteNameEnum fromInteger(int integerValue) {
         switch(integerValue) {
             case 0:
-                return A;
-            case 1:
-                return A_SHARP;
-            case 2:
-                return B;
-            case 3:
                 return C;
-            case 4:
+            case 1:
                 return C_SHARP;
-            case 5:
+            case 2:
                 return D;
-            case 6:
+            case 3:
                 return D_SHARP;
-            case 7:
+            case 4:
                 return E;
-            case 8:
+            case 5:
                 return F;
-            case 9:
+            case 6:
                 return F_SHARP;
-            case 10:
+            case 7:
                 return G;
-            case 11:
+            case 8:
                 return G_SHARP;
-            case -1:
+            case 9:
+                return A;
+            case 10:
+                return A_SHARP;
+            case 11:
+                return B;
             default:
                 return NO_NOTE;
         }

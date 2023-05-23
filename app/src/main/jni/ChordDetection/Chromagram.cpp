@@ -31,8 +31,8 @@ Chromagram::Chromagram (int frameSize, int fs)
            numBinsToSearch (2)
 {
     // calculate note frequencies
-    for (int i = 0; i < 12; i++)
-        noteFrequencies[i] = referenceFrequency * pow (2,(((float) i) / 24));
+    for (int i = 0; i < SEMITONES; i++)
+        noteFrequencies[i] = referenceFrequency * pow (2,(((float) i) / SEMITONES));
 
     // set up FFT
     //setupFFT();
@@ -41,10 +41,10 @@ Chromagram::Chromagram (int frameSize, int fs)
     buffer.resize (bufferSize);
 
     // setup chromagram vector
-    chromagram.resize (12);
+    chromagram.resize (SEMITONES);
 
     // initialise chromagram
-    for (int i = 0; i < 12; i++)
+    for (int i = 0; i < SEMITONES; i++)
         chromagram[i] = 0.0;
 
     // setup magnitude spectrum vector
@@ -191,7 +191,7 @@ void Chromagram::calculateChromagram() {
 
     double divisorRatio = (((double) samplingFrequency) / 4.0) / ((double)bufferSize);
 
-    for (int n = 0; n < 12; n++)
+    for (int n = 0; n < SEMITONES; n++)
     {
         double chromaSum = 0.0;
 
