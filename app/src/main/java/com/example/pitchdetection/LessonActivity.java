@@ -87,9 +87,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     /*
      * VARIABLES DE LAS LECCIONES
      */
-    // TODO: como planear las clases
-    ArrayList<NoteNameEnum> chords_to_play;
-    ArrayList<ChordTypeEnum> chords_types_to_play;
     private Lesson info;
     Bundle extras;
     String lesson_name;
@@ -115,7 +112,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         camera_bridge_view = findViewById(R.id.cameraViewer);
         camera_bridge_view.setVisibility(SurfaceView.VISIBLE);
         //Descomentar para camara frontal
-        camera_bridge_view.setCameraIndex(1); //DEBUG
+        //camera_bridge_view.setCameraIndex(1); //DEBUG
         camera_bridge_view.setCvCameraViewListener(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); //Mantener pantalla encendida para que no entre en suspension
 
@@ -131,8 +128,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                         gray = new Mat();
                         lines = new Mat();
                         frets = new ArrayList<>();
-                        high_limit = new Scalar(45,255,255);
-                        low_limit = new Scalar(15,100,20);
+                        high_limit = new Scalar(30,255,255);
+                        low_limit = new Scalar(0,100,20);
                         camera_bridge_view.enableView();
                         approx_curve = new MatOfPoint2f();
                         break;
@@ -174,13 +171,14 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         chord = service.getChord();
         translateChord();
-        Log.e("Acorde: ", chord_name.toString() + " " + chord_type.toString());
-        Log.e("Info: ", info.getChord(index).getName().toString() + " " +info.getChord(index).getType().toString());
+        // DEBUG
+        //Log.e("Acorde: ", chord_name.toString() + " " + chord_type.toString());
+        //Log.e("Info: ", info.getChord(index).getName().toString() + " " +info.getChord(index).getType().toString());
 
         // Obtener frame en color, se usara dentro de las funciones
         src = inputFrame.rgba();
         // Voltear la imagen en el eje y para que actue como un espejo
-        Core.flip(src, src, 1);
+        //Core.flip(src, src, 1);
 
         findMarker();
 
@@ -188,18 +186,16 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         if(marker_found) {
 //            Log.i("Angulo marcador", (calcMarkerAngle(rectangle.x+ rectangle.width, rectangle.y,
 //                    rectangle.x + rectangle.width, rectangle.y + rectangle.height)*180/Math.PI) + "");
-            //detectParallelLines();
+            detectParallelLines();
         }
 
         if(marker_found && frets.size() > 1)
             drawNote(info.getChord(index).get(0));
 
-        if(chord_name == info.getChord(index).getName() &&
-           index < info.size())
-        {
-            index++;
-//            System.out.println("Acorde correcto " + index);
-        }
+        if(index < info.size())
+            if(chord_name == info.getChord(index).getName())
+                index++;
+
         Imgproc.putText(src, index+"", new Point(170,280), 0,1,new Scalar(255,0,0), 4);
 
         return src;
@@ -324,13 +320,11 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      * @return      : true si son iguales, false si no
      */
     private boolean compareAngle(double p1, double p2) {
-        boolean equals = false;
         double tolerance = 75 * Math.PI / 180;
 
-        equals = Math.abs(p1-p2) >= tolerance;
-
-        return equals;
+        return Math.abs(p1-p2) >= tolerance;
     }
+
     @Override
     protected void onPause() {
         super.onPause();
@@ -358,7 +352,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     }
 
     private void translateChord() {
-        chord_name = NoteNameEnum.fromInteger(chord[0]);
+        chord_name = NoteNameEnum.get(chord[0]);
         chord_type = ChordTypeEnum.fromInteger(chord[1]);
     }
 
@@ -374,13 +368,19 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
         double interval = rectangle.height / 6.0;
 
-        Imgproc.circle(src,
-                new Point(x + frets.get(n.getFret())[0],
-                          y + interval * n.getString()),
-                40, new Scalar(166,119,249),-1);
-    }
-
-    private double calcFretDistance(int n) {
-        return 650 - (650 / Math.pow(2, n/12.0));
+        if (n.getFret() == 0){
+            Imgproc.line(src,
+                    new Point(x + frets.get(n.getFret())[0],y),
+                    new Point(x + frets.get(n.getFret())[0],
+                            y + rectangle.height),
+                    new Scalar(89,55,247),
+                    4);
+        }
+        else{
+            Imgproc.circle(src,
+                    new Point(x + frets.get(0)[0],
+                            y + interval * n.getString()),
+                    40, new Scalar(166,119,249),-1);
+        }
     }
 }

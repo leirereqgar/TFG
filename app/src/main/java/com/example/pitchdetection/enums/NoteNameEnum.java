@@ -18,7 +18,7 @@ public enum NoteNameEnum {
 
     public int getValue(){ return value; }
 
-    public static NoteNameEnum fromInteger(int integerValue) {
+    public static NoteNameEnum get(int integerValue) {
         switch(integerValue) {
             case 0:
                 return C;
