@@ -183,14 +183,21 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         findMarker();
 
         // Encontrar los trastes buscando las lineas paralelas a el lado del marcador.
-        if(marker_found) {
-//            Log.i("Angulo marcador", (calcMarkerAngle(rectangle.x+ rectangle.width, rectangle.y,
-//                    rectangle.x + rectangle.width, rectangle.y + rectangle.height)*180/Math.PI) + "");
-            detectParallelLines();
-        }
+//        if(marker_found) {
+////            Log.i("Angulo marcador", (calcMarkerAngle(rectangle.x+ rectangle.width, rectangle.y,
+////                    rectangle.x + rectangle.width, rectangle.y + rectangle.height)*180/Math.PI) + "");
+//            detectParallelLines();
+//        }
 
-        if(marker_found && frets.size() > 1)
-            drawNote(info.getChord(index).get(0));
+        //DEBUG
+//        frets.add(new double[]{100, (rectangle.y+ rectangle.height)/2});
+//        frets.add(new double[]{ 200, (rectangle.y+ rectangle.height)/2});
+//        frets.add(new double[]{ 300, (rectangle.y+ rectangle.height)/2});
+//        frets.add(new double[]{ 400, (rectangle.y+ rectangle.height)/2});
+//        frets.add(new double[]{ 500, (rectangle.y+ rectangle.height)/2});
+
+        if(marker_found && frets.size() > 0)
+            drawChord(info.getChord(index));
 
         if(index < info.size())
             if(chord_name == info.getChord(index).getName())
@@ -358,11 +365,11 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
     private void drawChord(Chord c) {
         for (int i = 0; i < c.size(); i++) {
-            drawNote(c.get(i));
+            drawNote(c.get(i), i);
         }
     }
 
-    private void drawNote(Note n) {
+    private void drawNote(Note n, int index) {
         int x = rectangle.x + rectangle.width;
         int y = rectangle.y;
 
@@ -378,7 +385,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         }
         else{
             Imgproc.circle(src,
-                    new Point(x + frets.get(0)[0],
+                    new Point(x + frets.get(n.getFret())[0],
                             y + interval * n.getString()),
                     40, new Scalar(166,119,249),-1);
         }
