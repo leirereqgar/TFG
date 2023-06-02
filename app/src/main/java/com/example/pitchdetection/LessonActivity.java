@@ -112,7 +112,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         camera_bridge_view = findViewById(R.id.cameraViewer);
         camera_bridge_view.setVisibility(SurfaceView.VISIBLE);
         //Descomentar para camara frontal
-        //camera_bridge_view.setCameraIndex(1); //DEBUG
+        camera_bridge_view.setCameraIndex(1); //DEBUG
         camera_bridge_view.setCvCameraViewListener(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); //Mantener pantalla encendida para que no entre en suspension
 
@@ -131,15 +131,23 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                     low_limit = new Scalar(0, 100, 20);
                     camera_bridge_view.enableView();
                     approx_curve = new MatOfPoint2f();
+
+                    /*
+                     * La deteccion de trastes se hace con un Timer,
+                     * la ejecucion empieza despues de crearse
+                     * la actividad.
+                     * Se ejecuta la funcion cada 3 segundos
+                     */
                     cronometro = new Timer();
                     cronometro.schedule(new TimerTask() {
                         @Override
                         public void run() {
                             System.out.println("Detectando trastes");
+                            findMarker();
                             if(marker_found)
                                 detectParallelLines();
                         }
-                    }, 1000, 3000);
+                    }, 0, 3000);
                 } else {
                     super.onManagerConnected(status);
                 }
@@ -184,9 +192,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         // Obtener frame en color, se usara dentro de las funciones
         src = inputFrame.rgba();
         // Voltear la imagen en el eje y para que actue como un espejo
-        //Core.flip(src, src, 1);
+        Core.flip(src, src, 1);
 
-        findMarker();
+//        findMarker();
 
         // Encontrar los trastes buscando las lineas paralelas a el lado del marcador.
 //        if(marker_found) {
@@ -201,12 +209,11 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 //        frets.add(new double[]{ 500, (rectangle.y+ rectangle.height)/2});
 
         for (int i = 0; i < frets.size(); i++) {
-            Point pt1 = new Point(Math.round(frets.get(i)[0] + 1000), Math.round(frets.get(i)[1] + 1000));
-            Point pt2 = new Point(Math.round(frets.get(i)[0] - 1000), Math.round(frets.get(i)[1] - 1000));
-            Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 3, Imgproc.LINE_AA, 0);
+            Point pt1 = new Point(frets.get(i)[0], frets.get(i)[1]);
+            Imgproc.circle(src, pt1, 10, new Scalar(255%(i+1),0,0), 3);
         }
 
-        if(marker_found && frets.size() > 4)
+        if(marker_found && frets.size() > 4 && index < info.size())
             drawChord(info.getChord(index));
 
         if(index < info.size())
@@ -296,6 +303,64 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         /*
         * Para seguir eliminando lineas no deseadas y dejarlo para dibujar la informacion se ordena
         * el array de forma ascendente segun la coordenada x
+         */
+        frets.sort(Comparator.comparingDouble(d -> d[0]));
+
+        // Por ultimo, eliminar lineas detectadas a la "izquierda" del marcador
+        for (int i = 0; i < frets.size(); i++) {
+            if(Double.compare(rectangle.x+ rectangle.width, frets.get(i)[0]) < 0)
+                frets.remove(i);
+        }
+    }
+
+    //Intento de deteccion con hough lines probabilistico
+    private void detectParallelLinesP() {
+        //Calcular el angulo del lado del marcador
+        double alfa = calcAngle(rectangle.x+ rectangle.width, rectangle.y,
+                rectangle.x + rectangle.width, rectangle.y + rectangle.height);
+        /*
+         * 1.- Se inicializa donde se guardara el resultado
+         * 2.- Se transforma el frame original (src) a banco y negro
+         * 3.- Se aplica la funcion Canny para encontrar los borden en la imagen
+         * 4.- Se ejecuta HoughLines para quedarnos solo con las lineas rectas
+         */
+        dst = new Mat();
+        Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY);
+        Imgproc.Canny(gray, dst, 50, 200, 3, false);
+        // Para mejorar performance mirar hacerlo con la probabilistica
+        Imgproc.HoughLinesP(dst, lines, 1, Math.PI/180, 100,100,10); // runs the actual detection
+
+        /*
+         * Una vez con todas las lineas detectadas se procesa la informacion para eliminar datos
+         * innecesarios
+         */
+        frets = new ArrayList<>();
+        for (int i = 0; i < lines.rows(); i++) {
+            double[] l = lines.get(i,0);
+            double line_angle = calcAngle(l[0], l[1], l[2], l[3]);
+
+            // Solo añadir la linea a los trastes si es paralela al marcador
+            if (compareAngle(alfa, line_angle)){
+                // Comprobar si hay otra linea demasiado cerca, si no es el caso se acaba añadiendo
+                boolean add = true;
+                for (int j = 0; j < frets.size() && add; j++) {
+                    if (Math.abs(frets.get(j)[0] - l[0]) < 100) {
+                        add = false;
+                    }
+                }
+
+                if (add){
+                    frets.add(l);
+//                    Point pt1 = new Point(Math.round(x0 + 1000 * (-b)), Math.round(y0 + 1000 * (a)));
+//                    Point pt2 = new Point(Math.round(x0 - 1000 * (-b)), Math.round(y0 - 1000 * (a)));
+//                    Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 3, Imgproc.LINE_AA, 0);
+                }
+            }
+        }
+
+        /*
+         * Para seguir eliminando lineas no deseadas y dejarlo para dibujar la informacion se ordena
+         * el array de forma ascendente segun la coordenada x
          */
         frets.sort(Comparator.comparingDouble(d -> d[0]));
 
