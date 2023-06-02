@@ -8,34 +8,36 @@
     style="@style/Theme.GuitAR.background">
 
     <TextView
-        android:id="@+id/instrucciones"
-        style="@style/Widget.GuitAR.TextView"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
-        android:text="Lorem ipsum dolor sit amet, consectetur
-adipiscing elit.Curabitur aliquet, purus at rhoncus tincidunt, arcu nibh
-sollicitudin urna, sed vulputate erat augue id mi.
-Sed consequat tempor sagittis. Curabitur vehicula consequat
-eros, a vehicula nunc vehicula vel. Donec sit amet mattis ligula.
-Integer tempus risus nunc, eu accumsan ipsum interdum dictum.
-Praesent velit neque, volutpat vel odio sit amet, sodales ultrices
-ipsum. Proin congue purus id libero dapibus, quis luctus dui tincidunt."
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/esquema"
-        app:layout_constraintHorizontal_bias="0.5"
+        android:id="@+id/condiciones"
+        android:layout_width="350dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="96dp"
+        android:text="Para el correcto funcionamiento se debe estar en un sitio bien iluminado y en silencio."
+        android:textAppearance="@style/TextAppearance.GuitAR.TextInputLayout.HintText"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.5" />
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/instrucciones"
+        android:layout_width="352dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="24dp"
+        android:text="Colocar un marcador sobre la cejuela de la guitarra como en la imagen de la derecha. Procurar que ocupe todo el ancho del mastil."
+        android:textAppearance="@style/TextAppearance.GuitAR.TextInputLayout.HintText"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/condiciones" />
 
     <ImageView
-        android:id="@+id/esquema"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:id="@+id/diagrama"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="82dp"
+        android:layout_marginTop="28dp"
+        android:layout_marginEnd="72dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/instrucciones"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.5"
-        tools:srcCompat="@tools:sample/avatars" />
+        app:srcCompat="@drawable/diagrama" />
 </androidx.constraintlayout.widget.ConstraintLayout>
