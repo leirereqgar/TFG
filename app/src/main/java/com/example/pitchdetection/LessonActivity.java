@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.Log;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -33,9 +32,10 @@ import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class LessonActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
     /*
@@ -60,7 +60,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     MatOfPoint2f approx_curve;
     double min_area = 500;
 
-    Thread marker_thread, frets_thread;
+    Timer cronometro;
 
     /*
      * VARIABLES PARA LOS ACORDES
@@ -120,22 +120,28 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         base_loader_callback = new BaseLoaderCallback(this) {
             @Override
             public void onManagerConnected(int status) {
-                switch (status) {
-                    case LoaderCallbackInterface.SUCCESS:
-                        src = new Mat();
-                        hsv = new Mat();
-                        blue_img = new Mat();
-                        gray = new Mat();
-                        lines = new Mat();
-                        frets = new ArrayList<>();
-                        high_limit = new Scalar(30,255,255);
-                        low_limit = new Scalar(0,100,20);
-                        camera_bridge_view.enableView();
-                        approx_curve = new MatOfPoint2f();
-                        break;
-                    default:
-                        super.onManagerConnected(status);
-                        break;
+                if (status == LoaderCallbackInterface.SUCCESS) {
+                    src = new Mat();
+                    hsv = new Mat();
+                    blue_img = new Mat();
+                    gray = new Mat();
+                    lines = new Mat();
+                    frets = new ArrayList<>();
+                    high_limit = new Scalar(30, 255, 255);
+                    low_limit = new Scalar(0, 100, 20);
+                    camera_bridge_view.enableView();
+                    approx_curve = new MatOfPoint2f();
+                    cronometro = new Timer();
+                    cronometro.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            System.out.println("Detectando trastes");
+                            if(marker_found)
+                                detectParallelLines();
+                        }
+                    }, 1000, 3000);
+                } else {
+                    super.onManagerConnected(status);
                 }
             }
         };
@@ -184,8 +190,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
         // Encontrar los trastes buscando las lineas paralelas a el lado del marcador.
 //        if(marker_found) {
-////            Log.i("Angulo marcador", (calcMarkerAngle(rectangle.x+ rectangle.width, rectangle.y,
-////                    rectangle.x + rectangle.width, rectangle.y + rectangle.height)*180/Math.PI) + "");
 //            detectParallelLines();
 //        }
 
@@ -196,7 +200,13 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 //        frets.add(new double[]{ 400, (rectangle.y+ rectangle.height)/2});
 //        frets.add(new double[]{ 500, (rectangle.y+ rectangle.height)/2});
 
-        if(marker_found && frets.size() > 0)
+        for (int i = 0; i < frets.size(); i++) {
+            Point pt1 = new Point(Math.round(frets.get(i)[0] + 1000), Math.round(frets.get(i)[1] + 1000));
+            Point pt2 = new Point(Math.round(frets.get(i)[0] - 1000), Math.round(frets.get(i)[1] - 1000));
+            Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 3, Imgproc.LINE_AA, 0);
+        }
+
+        if(marker_found && frets.size() > 4)
             drawChord(info.getChord(index));
 
         if(index < info.size())
@@ -263,12 +273,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                     theta = lines.get(i, 0)[1];
             double a = Math.cos(theta), b = Math.sin(theta);
             double x0 = a*rho, y0 = b*rho;
-            //System.out.println(x0 + "    " + y0);
 
-            // Solo plantearse añadir la linea a los trastes si es paralela al marcador
+            // Solo añadir la linea a los trastes si es paralela al marcador
             if (compareAngle(alfa, theta)){
-                //System.out.println("iguales");
-
                 // Comprobar si hay otra linea demasiado cerca, si no es el caso se acaba añadiendo
                 boolean add = true;
                 for (int j = 0; j < frets.size() && add; j++) {
@@ -279,9 +286,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
                 if (add){
                     frets.add(new double[]{x0, y0});
-                    Point pt1 = new Point(Math.round(x0 + 1000 * (-b)), Math.round(y0 + 1000 * (a)));
-                    Point pt2 = new Point(Math.round(x0 - 1000 * (-b)), Math.round(y0 - 1000 * (a)));
-                    Imgproc.line(src, pt1, pt2, new Scalar(0, 255, 0), 3, Imgproc.LINE_AA, 0);
+//                    Point pt1 = new Point(Math.round(x0 + 1000 * (-b)), Math.round(y0 + 1000 * (a)));
+//                    Point pt2 = new Point(Math.round(x0 - 1000 * (-b)), Math.round(y0 - 1000 * (a)));
+//                    Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 3, Imgproc.LINE_AA, 0);
                 }
             }
         }
@@ -290,12 +297,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         * Para seguir eliminando lineas no deseadas y dejarlo para dibujar la informacion se ordena
         * el array de forma ascendente segun la coordenada x
          */
-        Collections.sort(frets, new Comparator<double[]>() {
-            @Override
-            public int compare(double[] d1, double[] d2) {
-                return Double.compare(d1[0], d2[0]);
-            }
-        });
+        frets.sort(Comparator.comparingDouble(d -> d[0]));
 
         // Por ultimo, eliminar lineas detectadas a la "izquierda" del marcador
         for (int i = 0; i < frets.size(); i++) {
@@ -313,9 +315,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      * @return   : angulo de la recta en radianes
      */
     private double calcAngle(double x1, double y1, double x2, double y2) {
-        double pendiente = 0;
-
-        pendiente = (y2 - y1) / (x2 - x1);
+        double pendiente = (y2 - y1) / (x2 - x1);
 
         return Math.atan(pendiente);
     }
@@ -365,11 +365,11 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
     private void drawChord(Chord c) {
         for (int i = 0; i < c.size(); i++) {
-            drawNote(c.get(i), i);
+            drawNote(c.get(i));
         }
     }
 
-    private void drawNote(Note n, int index) {
+    private void drawNote(Note n) {
         int x = rectangle.x + rectangle.width;
         int y = rectangle.y;
 
