@@ -29,7 +29,7 @@
             android:layout_height="250dp"
             android:layout_marginStart="10dp"
             android:layout_marginTop="30dp"
-            android:text="Menores"
+            android:text="Clase 2\nAcordes menores"
             app:layout_constraintStart_toEndOf="@+id/c1"
             app:layout_constraintTop_toTopOf="parent" 
             android:clickable="true"/>
@@ -42,7 +42,7 @@
             android:layout_height="250dp"
             android:layout_marginStart="10dp"
             android:layout_marginTop="30dp"
-            android:text="Dominantes"
+            android:text="Clase 3\nAcordes dominantes"
             app:layout_constraintStart_toEndOf="@+id/c2"
             app:layout_constraintTop_toTopOf="parent" 
             android:clickable="true"/>
@@ -55,7 +55,7 @@
             android:layout_height="250dp"
             android:layout_marginStart="10dp"
             android:layout_marginTop="30dp"
-            android:text="Button"
+            android:text="Clase 4\nAcordes suspendidos"
             app:layout_constraintStart_toEndOf="@+id/c3"
             app:layout_constraintTop_toTopOf="parent" 
             android:clickable="true"/>

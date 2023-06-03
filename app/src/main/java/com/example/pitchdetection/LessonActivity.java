@@ -58,7 +58,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     // Limites superior e inferior del color amarillo en el espacio hsv
     Scalar high_limit, low_limit;
     MatOfPoint2f approx_curve;
-    double min_area = 500;
+    double min_area = 250;
 
     Timer cronometro;
 
@@ -68,6 +68,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     NoteNameEnum chord_name  = NoteNameEnum.A;
     ChordTypeEnum chord_type = ChordTypeEnum.Major;
     int [] chord             = new int [2];
+    ArrayList<Scalar> colors;
+
     ChordRecognitionService service;
     boolean connected = false;
     private ServiceConnection connection = new ServiceConnection() {
@@ -109,10 +111,16 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 break;
         }
 
+        colors = new ArrayList<>();
+        colors.add(new Scalar(50, 161, 181));
+        colors.add(new Scalar(246, 212, 94));
+        colors.add(new Scalar(249, 119, 166));
+        colors.add(new Scalar(254, 249, 255));
+
         camera_bridge_view = findViewById(R.id.cameraViewer);
         camera_bridge_view.setVisibility(SurfaceView.VISIBLE);
         //Descomentar para camara frontal
-        camera_bridge_view.setCameraIndex(1); //DEBUG
+//        camera_bridge_view.setCameraIndex(1); //DEBUG
         camera_bridge_view.setCvCameraViewListener(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); //Mantener pantalla encendida para que no entre en suspension
 
@@ -143,11 +151,10 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                         @Override
                         public void run() {
                             System.out.println("Detectando trastes");
-                            findMarker();
                             if(marker_found)
                                 detectParallelLines();
                         }
-                    }, 0, 3000);
+                    }, 0, 500);
                 } else {
                     super.onManagerConnected(status);
                 }
@@ -192,9 +199,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         // Obtener frame en color, se usara dentro de las funciones
         src = inputFrame.rgba();
         // Voltear la imagen en el eje y para que actue como un espejo
-        Core.flip(src, src, 1);
+        //Core.flip(src, src, 1);
 
-//        findMarker();
+        findMarker();
 
         // Encontrar los trastes buscando las lineas paralelas a el lado del marcador.
 //        if(marker_found) {
@@ -209,8 +216,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 //        frets.add(new double[]{ 500, (rectangle.y+ rectangle.height)/2});
 
         for (int i = 0; i < frets.size(); i++) {
-            Point pt1 = new Point(frets.get(i)[0], frets.get(i)[1]);
-            Imgproc.circle(src, pt1, 10, new Scalar(255%(i+1),0,0), 3);
+            Point pt1 = new Point(Math.round(frets.get(i)[0] + 1000 * (-frets.get(i)[3])), Math.round(frets.get(i)[1]  + 1000 * (frets.get(i)[2] )));
+            Point pt2 = new Point(Math.round(frets.get(i)[0] - 1000 * (-frets.get(i)[3])), Math.round(frets.get(i)[1]  - 1000 * (frets.get(i)[2] )));
+            Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 3, Imgproc.LINE_AA, 0);
         }
 
         if(marker_found && frets.size() > 4 && index < info.size())
@@ -249,7 +257,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 Imgproc.line(src,
                         new Point(rectangle.x+ rectangle.width, rectangle.y),
                         new Point(rectangle.x+rectangle.width, rectangle.y+rectangle.height),
-                        new Scalar(0,0,0),10);
+                        new Scalar(0,0,255),10);
             }
         }
     }
@@ -292,7 +300,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 }
 
                 if (add){
-                    frets.add(new double[]{x0, y0});
+                    frets.add(new double[]{x0, y0, a, b});
 //                    Point pt1 = new Point(Math.round(x0 + 1000 * (-b)), Math.round(y0 + 1000 * (a)));
 //                    Point pt2 = new Point(Math.round(x0 - 1000 * (-b)), Math.round(y0 - 1000 * (a)));
 //                    Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 3, Imgproc.LINE_AA, 0);
@@ -304,13 +312,31 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         * Para seguir eliminando lineas no deseadas y dejarlo para dibujar la informacion se ordena
         * el array de forma ascendente segun la coordenada x
          */
-        frets.sort(Comparator.comparingDouble(d -> d[0]));
 
+//        for (int i = 0; i < frets.size(); i++) {
+//            System.out.println(frets.get(i)[0]);
+//        }
+        frets.sort(Comparator.comparingDouble(d -> d[0]));
+        //DEBUG
+//        System.out.println("marcador:" + (rectangle.x+rectangle.width));
+//        for (int i = 0; i < frets.size(); i++) {
+//            System.out.println(frets.get(i)[0]);
+//        }
+
+//        System.out.println("aaaaaa");
         // Por ultimo, eliminar lineas detectadas a la "izquierda" del marcador
         for (int i = 0; i < frets.size(); i++) {
-            if(Double.compare(rectangle.x+ rectangle.width, frets.get(i)[0]) < 0)
+            if(Double.compare(rectangle.x+ rectangle.width, frets.get(i)[0]) > 0) {
+//                System.out.println(frets.get(i)[0]);
                 frets.remove(i);
+            }
         }
+
+        //DEBUG
+//        System.out.println("despues eliminar");
+//        for (int i = 0; i < frets.size(); i++) {
+//            System.out.println(frets.get(i)[0]);
+//        }
     }
 
     //Intento de deteccion con hough lines probabilistico
@@ -344,7 +370,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 // Comprobar si hay otra linea demasiado cerca, si no es el caso se acaba añadiendo
                 boolean add = true;
                 for (int j = 0; j < frets.size() && add; j++) {
-                    if (Math.abs(frets.get(j)[0] - l[0]) < 100) {
+                    if (Math.abs(frets.get(j)[0] - l[0]) < 1) {
                         add = false;
                     }
                 }
@@ -392,7 +418,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      * @return      : true si son iguales, false si no
      */
     private boolean compareAngle(double p1, double p2) {
-        double tolerance = 75 * Math.PI / 180;
+        double tolerance = 5 * Math.PI / 180;
 
         return Math.abs(p1-p2) >= tolerance;
     }
@@ -430,29 +456,29 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
     private void drawChord(Chord c) {
         for (int i = 0; i < c.size(); i++) {
-            drawNote(c.get(i));
+            drawNote(c.get(i), colors.get(i));
         }
     }
 
-    private void drawNote(Note n) {
+    private void drawNote(Note n, Scalar c) {
         int x = rectangle.x + rectangle.width;
         int y = rectangle.y;
 
         double interval = rectangle.height / 6.0;
 
-        if (n.getFret() == 0){
+        if (n.getString() == 0){
             Imgproc.line(src,
-                    new Point(x + frets.get(n.getFret())[0],y),
+                    new Point(x + frets.get(n.getFret()-1)[0]-10,y),
                     new Point(x + frets.get(n.getFret())[0],
                             y + rectangle.height),
-                    new Scalar(89,55,247),
+                    c,
                     4);
         }
         else{
             Imgproc.circle(src,
-                    new Point(x + frets.get(n.getFret())[0],
+                    new Point(x + frets.get(n.getFret()-1)[0]-10,
                             y + interval * n.getString()),
-                    40, new Scalar(166,119,249),-1);
+                    30, c,-1);
         }
     }
 }

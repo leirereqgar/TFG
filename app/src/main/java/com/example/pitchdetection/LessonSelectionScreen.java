@@ -48,7 +48,7 @@ public class LessonSelectionScreen extends AppCompatActivity {
         buttons.get(2).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startLesson(ChordTypeEnum.Suspended.toString());
+                startLesson(ChordTypeEnum.Dominant.toString());
             }
         });
 
@@ -56,7 +56,7 @@ public class LessonSelectionScreen extends AppCompatActivity {
         buttons.get(3).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startLesson(ChordTypeEnum.Dominant.toString());
+                startLesson(ChordTypeEnum.Suspended.toString());
             }
         });
 
