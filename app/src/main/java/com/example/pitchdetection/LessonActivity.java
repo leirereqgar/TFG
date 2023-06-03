@@ -109,6 +109,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             case "Minor":
                 info = new Minor();
                 break;
+            case "Dominant":
+                info = new Dominant();
+                break;
+            case "Suspended":
+                info = new Suspended();
+                break;
         }
 
         colors = new ArrayList<>();
@@ -118,9 +124,10 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         colors.add(new Scalar(254, 249, 255));
 
         camera_bridge_view = findViewById(R.id.cameraViewer);
+        camera_bridge_view.setMaxFrameSize(1920,1080);
         camera_bridge_view.setVisibility(SurfaceView.VISIBLE);
         //Descomentar para camara frontal
-//        camera_bridge_view.setCameraIndex(1); //DEBUG
+        camera_bridge_view.setCameraIndex(1); //DEBUG
         camera_bridge_view.setCvCameraViewListener(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); //Mantener pantalla encendida para que no entre en suspension
 
@@ -199,7 +206,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         // Obtener frame en color, se usara dentro de las funciones
         src = inputFrame.rgba();
         // Voltear la imagen en el eje y para que actue como un espejo
-        //Core.flip(src, src, 1);
+        Core.flip(src, src, 1);
 
         findMarker();
 
