@@ -39,5 +39,5 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/instrucciones"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/diagrama" />
+        app:srcCompat="@drawable/diagrama2" />
 </androidx.constraintlayout.widget.ConstraintLayout>

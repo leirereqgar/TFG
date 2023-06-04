@@ -25,7 +25,7 @@ public class Major extends Lesson{
         Chord d_major = new Chord(NoteNameEnum.D, ChordTypeEnum.Major);
         d_major.add(new Note(3,2));
         d_major.add(new Note(1,2));
-        d_major.add(new Note(2,2));
+        d_major.add(new Note(2,3));
         chords.add(d_major);
 
         Chord e_major = new Chord(NoteNameEnum.E, ChordTypeEnum.Major);

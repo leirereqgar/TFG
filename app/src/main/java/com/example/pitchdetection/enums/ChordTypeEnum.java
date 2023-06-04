@@ -49,7 +49,7 @@ public enum ChordTypeEnum {
             case Suspended:
                 return "Suspended";
             case Dominant:
-                return "Dominant 7th";
+                return "Dominant";
             case Diminished5th:
                 return "Dim";
             case Augmented5th:

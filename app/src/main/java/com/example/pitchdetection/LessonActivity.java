@@ -105,15 +105,19 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         switch (lesson_name) {
             case "Major":
                 info = new Major();
+                System.out.println(lesson_name);
                 break;
             case "Minor":
                 info = new Minor();
+                System.out.println(lesson_name);
                 break;
             case "Dominant":
                 info = new Dominant();
+                System.out.println(lesson_name);
                 break;
             case "Suspended":
                 info = new Suspended();
+                System.out.println(lesson_name);
                 break;
         }
 
@@ -187,6 +191,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         connected = false;
         Intent service_intent = new Intent(this, ChordRecognitionService.class);
         stopService(service_intent);
+        cronometro.cancel();
     }
 
     @Override
@@ -208,6 +213,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         // Voltear la imagen en el eje y para que actue como un espejo
         Core.flip(src, src, 1);
 
+        Imgproc.putText(src, lesson_name, new Point(350,280), 0,4,new Scalar(0,0,0), 4);
+
         findMarker();
 
         // Encontrar los trastes buscando las lineas paralelas a el lado del marcador.
@@ -222,14 +229,14 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 //        frets.add(new double[]{ 400, (rectangle.y+ rectangle.height)/2});
 //        frets.add(new double[]{ 500, (rectangle.y+ rectangle.height)/2});
 
-        for (int i = 0; i < frets.size(); i++) {
-            Point pt1 = new Point(Math.round(frets.get(i)[0] + 1000 * (-frets.get(i)[3])), Math.round(frets.get(i)[1]  + 1000 * (frets.get(i)[2] )));
-            Point pt2 = new Point(Math.round(frets.get(i)[0] - 1000 * (-frets.get(i)[3])), Math.round(frets.get(i)[1]  - 1000 * (frets.get(i)[2] )));
-            Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 3, Imgproc.LINE_AA, 0);
-        }
+//        for (int i = 0; i < frets.size(); i++) {
+//            Point pt1 = new Point(Math.round(frets.get(i)[0] + 1000 * (-frets.get(i)[3])), Math.round(frets.get(i)[1]  + 1000 * (frets.get(i)[2] )));
+//            Point pt2 = new Point(Math.round(frets.get(i)[0] - 1000 * (-frets.get(i)[3])), Math.round(frets.get(i)[1]  - 1000 * (frets.get(i)[2] )));
+//            Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 3, Imgproc.LINE_AA, 0);
+//        }
 
         if(marker_found &&
-                frets.size() > info.getChord(index).numStrings() &&
+                frets.size() > info.getChord(index).numFrets() &&
                 index < info.size()) {
             drawChord(info.getChord(index));
 
@@ -275,6 +282,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         //Calcular el angulo del lado del marcador
         double alfa = calcAngle(rectangle.x+ rectangle.width, rectangle.y,
                                         rectangle.x + rectangle.width, rectangle.y + rectangle.height);
+        Rect marker = rectangle;
         /*
         * 1.- Se inicializa donde se guardara el resultado
         * 2.- Se transforma el frame original (src) a banco y negro
@@ -327,19 +335,19 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 //        }
         frets.sort(Comparator.comparingDouble(d -> d[0]));
         //DEBUG
-//        System.out.println("marcador:" + (rectangle.x+rectangle.width));
+//        System.out.println("marcador:" + (marker.x+marker.width));
 //        for (int i = 0; i < frets.size(); i++) {
 //            System.out.println(frets.get(i)[0]);
 //        }
-
+//
 //        System.out.println("aaaaaa");
         // Por ultimo, eliminar lineas detectadas a la "izquierda" del marcador
-//        for (int i = 0; i < frets.size(); i++) {
-//            if(Double.compare(rectangle.x+ rectangle.width, frets.get(i)[0]) > 0) {
-////                System.out.println(frets.get(i)[0]);
-//                frets.remove(i);
-//            }
-//        }
+        for (int i = 0; i < frets.size(); i++) {
+            if(Double.compare(marker.x+ marker.width, frets.get(i)[0]) > 0) {
+//                System.out.println(frets.get(i)[0]);
+                frets.remove(i);
+            }
+        }
 
         //DEBUG
 //        System.out.println("despues eliminar");
@@ -453,9 +461,11 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
         if (camera_bridge_view != null) {
             camera_bridge_view.disableView();
         }
+        cronometro.cancel();
     }
 
     private void translateChord() {
@@ -470,22 +480,22 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     }
 
     private void drawNote(Note n, Scalar c) {
-        int x = rectangle.x + rectangle.width;
-        int y = rectangle.y;
+        double x = (frets.get(n.getFret())[0]+frets.get(n.getFret()-1)[0])/2;
 
         double interval = rectangle.height / 6.0;
 
         if (n.getString() == 0){
             Imgproc.line(src,
-                    new Point(frets.get(n.getFret()-1)[0],y),
                     new Point(frets.get(n.getFret()-1)[0],
-                            y + rectangle.height),
+                            rectangle.y),
+                    new Point(frets.get(n.getFret()-1)[0],
+                            rectangle.y + rectangle.height),
                     c,
-                    4);
+                    10);
         }
         else{
             Imgproc.circle(src,
-                    new Point(frets.get(n.getFret()-1)[0],
+                    new Point(x,
                             (rectangle.y + rectangle.height) - interval * (n.getString())),
                     30, c,-1);
         }

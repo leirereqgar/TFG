@@ -36,7 +36,7 @@ public class Chord {
         return type;
     }
 
-    public int numStrings() {
-        return note_array.get(note_array.size()-1).getString();
+    public int numFrets() {
+        return note_array.get(note_array.size()-1).getFret();
     }
 }
