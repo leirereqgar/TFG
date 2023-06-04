@@ -1,5 +1,10 @@
 package com.example.pitchdetection.lessons;
 
+import com.example.pitchdetection.enums.ChordTypeEnum;
+import com.example.pitchdetection.enums.NoteNameEnum;
+
+import java.util.ArrayList;
+
 public class Suspended extends Lesson{
     @Override
     public void init() {

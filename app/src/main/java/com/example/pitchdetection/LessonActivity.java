@@ -45,7 +45,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     BaseLoaderCallback base_loader_callback;
 
     // Imagen original, en hsv y solo con color amarillo: para el marcador
-    Mat src, hsv, blue_img;
+    Mat src, hsv, yellow_img;
 
     // Imagen en escala de grises y matrices para los trastes:
     Mat gray, dst, lines;
@@ -138,12 +138,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 if (status == LoaderCallbackInterface.SUCCESS) {
                     src = new Mat();
                     hsv = new Mat();
-                    blue_img = new Mat();
+                    yellow_img = new Mat();
                     gray = new Mat();
                     lines = new Mat();
                     frets = new ArrayList<>();
-                    high_limit = new Scalar(30, 255, 255);
-                    low_limit = new Scalar(0, 100, 20);
+                    high_limit = new Scalar(100,255,255);
+                    low_limit = new Scalar(80,100,20);
                     camera_bridge_view.enableView();
                     approx_curve = new MatOfPoint2f();
 
@@ -197,7 +197,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        chord = service.getChord();
+        //chord = service.getChord();
         translateChord();
         // DEBUG
         //Log.e("Acorde: ", chord_name.toString() + " " + chord_type.toString());
@@ -228,12 +228,14 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 3, Imgproc.LINE_AA, 0);
         }
 
-        if(marker_found && frets.size() > 4 && index < info.size())
+        if(marker_found &&
+                frets.size() > info.getChord(index).numStrings() &&
+                index < info.size()) {
             drawChord(info.getChord(index));
 
-        if(index < info.size())
             if(chord_name == info.getChord(index).getName())
                 index++;
+        }
 
         Imgproc.putText(src, index+"", new Point(170,280), 0,1,new Scalar(255,0,0), 4);
 
@@ -244,11 +246,11 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         // Convertir al espacio de color hsv
         Imgproc.cvtColor(src, hsv, Imgproc.COLOR_BGR2HSV);
         // Con los limites definidos, aislar el color amarillo de la imagen
-        Core.inRange(hsv, low_limit, high_limit, blue_img);
+        Core.inRange(hsv, low_limit, high_limit, yellow_img);
 
         // Extraer todos los contornos que se pueden encontrar
         List<MatOfPoint> contours = new ArrayList<>();
-        Imgproc.findContours(blue_img, contours, new Mat(), Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
+        Imgproc.findContours(yellow_img, contours, new Mat(), Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
 
         for (MatOfPoint contour : contours) {
             MatOfPoint2f curve = new MatOfPoint2f(contour.toArray());
@@ -332,12 +334,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
 //        System.out.println("aaaaaa");
         // Por ultimo, eliminar lineas detectadas a la "izquierda" del marcador
-        for (int i = 0; i < frets.size(); i++) {
-            if(Double.compare(rectangle.x+ rectangle.width, frets.get(i)[0]) > 0) {
-//                System.out.println(frets.get(i)[0]);
-                frets.remove(i);
-            }
-        }
+//        for (int i = 0; i < frets.size(); i++) {
+//            if(Double.compare(rectangle.x+ rectangle.width, frets.get(i)[0]) > 0) {
+////                System.out.println(frets.get(i)[0]);
+//                frets.remove(i);
+//            }
+//        }
 
         //DEBUG
 //        System.out.println("despues eliminar");
@@ -425,7 +427,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      * @return      : true si son iguales, false si no
      */
     private boolean compareAngle(double p1, double p2) {
-        double tolerance = 5 * Math.PI / 180;
+        double tolerance = 85 * Math.PI / 180;
 
         return Math.abs(p1-p2) >= tolerance;
     }
@@ -475,16 +477,16 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
         if (n.getString() == 0){
             Imgproc.line(src,
-                    new Point(x + frets.get(n.getFret()-1)[0]-10,y),
-                    new Point(x + frets.get(n.getFret())[0],
+                    new Point(frets.get(n.getFret()-1)[0],y),
+                    new Point(frets.get(n.getFret()-1)[0],
                             y + rectangle.height),
                     c,
                     4);
         }
         else{
             Imgproc.circle(src,
-                    new Point(x + frets.get(n.getFret()-1)[0]-10,
-                            y + interval * n.getString()),
+                    new Point(frets.get(n.getFret()-1)[0],
+                            (rectangle.y + rectangle.height) - interval * (n.getString())),
                     30, c,-1);
         }
     }

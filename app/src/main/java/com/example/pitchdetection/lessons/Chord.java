@@ -35,4 +35,8 @@ public class Chord {
     public ChordTypeEnum getType() {
         return type;
     }
+
+    public int numStrings() {
+        return note_array.get(note_array.size()-1).getString();
+    }
 }
