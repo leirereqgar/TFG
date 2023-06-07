@@ -2,69 +2,32 @@ package com.example.pitchdetection;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.helper.widget.Carousel;
-import androidx.viewpager2.widget.ViewPager2;
+import androidx.core.util.Pair;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 
-import com.example.pitchdetection.enums.ChordTypeEnum;
+import com.example.pitchdetection.enums.LessonName;
 
-import org.w3c.dom.Text;
-
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
+
 public class LessonSelectionScreen extends AppCompatActivity {
-    private static int n_lessons;
-    private ArrayList<TextView> buttons;
+    ArrayList<Pair<String, LessonName>> names;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lessons_selection_screen);
 
-        
-        buttons = new ArrayList<>();
-        buttons.add(findViewById(R.id.c1));
-        buttons.get(0).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startLesson(ChordTypeEnum.Major.toString());
-            }
-        });
-
-        buttons.add(findViewById(R.id.c2));
-        buttons.get(1).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startLesson(ChordTypeEnum.Minor.toString());
-            }
-        });
-
-        buttons.add(findViewById(R.id.c3));
-        buttons.get(2).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startLesson(ChordTypeEnum.Dominant.toString());
-            }
-        });
-
-        buttons.add(findViewById(R.id.c4));
-        buttons.get(3).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startLesson(ChordTypeEnum.Suspended.toString());
-            }
-        });
-
-        n_lessons = buttons.size();
+        names = new ArrayList<>();
+        names.add(new Pair<>("Clase 1\nAcordes mayores", LessonName.Major));
+        names.add(new Pair<>("Clase 2\nAcordes menores", LessonName.Minor));
+        names.add(new Pair<>("Clase 3\nAcordes de 7ª dominante", LessonName.Dominant));
 
         setUpCarousel();
-
-
     }
 
     private void startLesson(String extra) {
@@ -78,12 +41,19 @@ public class LessonSelectionScreen extends AppCompatActivity {
         carousel.setAdapter(new Carousel.Adapter() {
             @Override
             public int count() {
-                return n_lessons;
+                return names.size();
             }
 
             @Override
             public void populate(View view, int index) {
-                ((TextView)view).setText(buttons.get(index).getText());
+                ((Button)view).setText(names.get(index).first);
+
+                view.setOnClickListener(new View.OnClickListener(){
+                    @Override
+                    public void onClick(View view) {
+                        startLesson(names.get(index).second.toString());
+                    }
+                });
             }
 
             @Override

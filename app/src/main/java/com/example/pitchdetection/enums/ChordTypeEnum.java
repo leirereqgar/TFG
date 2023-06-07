@@ -10,7 +10,7 @@ public enum ChordTypeEnum {
     NoChord(-1);
 
     private final int value;
-    public static int numberOfChordTypes = 10;
+    public static int numberOfChordTypes = 7;
 
     ChordTypeEnum(int value) {
         this.value = value;
