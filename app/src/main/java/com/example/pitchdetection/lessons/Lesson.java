@@ -8,7 +8,7 @@ public abstract class Lesson {
     ChordTypeEnum code;
     ArrayList<Chord> chords;
 
-    public abstract void init();
+    abstract void init();
 
     public ChordTypeEnum getCode() {
         return code;

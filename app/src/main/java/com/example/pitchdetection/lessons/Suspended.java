@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 public class Suspended extends Lesson{
     @Override
-    public void init() {
+    void init() {
         code = ChordTypeEnum.Suspended;
 
         chords = new ArrayList<>();

@@ -12,7 +12,7 @@ public class Minor extends Lesson{
     }
 
     @Override
-    public void init(){
+    void init(){
         code = ChordTypeEnum.Minor;
 
         chords = new ArrayList<>();

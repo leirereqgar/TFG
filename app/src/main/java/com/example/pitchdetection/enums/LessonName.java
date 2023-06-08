@@ -28,7 +28,7 @@ public enum LessonName {
             case Progression1645_C:
                 return "Progresion1645 C";
             case Progression1514_C:
-                return "Progresion1541 C";
+                return "Progresion1514 C";
             case Progression145_E:
                 return "Progresion145 E";
             default:

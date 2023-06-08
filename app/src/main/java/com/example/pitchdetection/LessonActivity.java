@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -45,10 +46,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     BaseLoaderCallback base_loader_callback;
 
     // Imagen original, en hsv y solo con color amarillo: para el marcador
-    Mat src, hsv, yellow_img;
-
-    // Imagen en escala de grises y matrices para los trastes:
-    Mat gray, dst, lines;
+    Mat src, hsv, yellow_img, gray, dst, lines;
     ArrayList<double[]> frets;
 
     // Almacena los valores del marcador (esquina superior, ancho y alto)
@@ -82,6 +80,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
+            System.out.println("servicio desconectado");
             connected = false;
         }
     };
@@ -94,6 +93,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     String lesson_name;
     int index = 0;
 
+    // METODOS HEREDADOS DE AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -115,8 +115,20 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 info = new Dominant();
                 System.out.println(lesson_name);
                 break;
-            case "Suspended":
-                info = new Suspended();
+            case "Progresion145 C":
+                info = new Progression145C();
+                System.out.println(lesson_name);
+                break;
+            case "Progresion1645 C":
+                info = new Progression1645C();
+                System.out.println(lesson_name);
+                break;
+            case "Progresion1514 C":
+                info = new Progression1514C();
+                System.out.println(lesson_name);
+                break;
+            case "Progresion145 E":
+                info = new Progression145E();
                 System.out.println(lesson_name);
                 break;
         }
@@ -163,7 +175,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                         public void run() {
                             System.out.println("Detectando trastes");
                             if(marker_found)
-                                detectParallelLines();
+                                try{
+                                    detectParallelLines();
+                                }catch (Exception e){}
                         }
                     }, 0, 500);
                 } else {
@@ -187,22 +201,58 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     public void onStop() {
         super.onStop();
         //Desasociar el servicio para evitar errores en un futuro
-        unbindService(connection);
-        connected = false;
         Intent service_intent = new Intent(this, ChordRecognitionService.class);
         stopService(service_intent);
+        unbindService(connection);
+        connected = false;
+
         cronometro.cancel();
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (camera_bridge_view != null) {
+            camera_bridge_view.disableView();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!OpenCVLoader.initDebug()) {
+            Toast.makeText(getApplicationContext(), "Ha ocurrido un problema", Toast.LENGTH_SHORT).show();
+        } else {
+            base_loader_callback.onManagerConnected(BaseLoaderCallback.SUCCESS);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (camera_bridge_view != null) {
+            camera_bridge_view.disableView();
+        }
+        cronometro.cancel();
+    }
+
+
+    // METODOS HEREDADOS DE CameraBridgeViewBase.CvCameraListenerV2
     @Override
     public void onCameraViewStarted(int width, int height) {}
 
     @Override
     public void onCameraViewStopped() {}
 
+    /**
+     * onCameraFrame : en cada frame se localiza el marcador y se dibujan los elementos necesarios
+     * @param inputFrame
+     * @return frame con todos los elementos dibujados
+     */
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        //chord = service.getChord();
+        chord = service.getChord();
         translateChord();
         // DEBUG
         //Log.e("Acorde: ", chord_name.toString() + " " + chord_type.toString());
@@ -215,25 +265,10 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
         Imgproc.putText(src, lesson_name, new Point(350,280), 0,4,new Scalar(0,0,0), 4);
 
-        findMarker();
+        try {
+            findMarker();
+        } catch (Exception e) {}
 
-        // Encontrar los trastes buscando las lineas paralelas a el lado del marcador.
-//        if(marker_found) {
-//            detectParallelLines();
-//        }
-
-        //DEBUG
-//        frets.add(new double[]{100, (rectangle.y+ rectangle.height)/2});
-//        frets.add(new double[]{ 200, (rectangle.y+ rectangle.height)/2});
-//        frets.add(new double[]{ 300, (rectangle.y+ rectangle.height)/2});
-//        frets.add(new double[]{ 400, (rectangle.y+ rectangle.height)/2});
-//        frets.add(new double[]{ 500, (rectangle.y+ rectangle.height)/2});
-
-//        for (int i = 0; i < frets.size(); i++) {
-//            Point pt1 = new Point(Math.round(frets.get(i)[0] + 1000 * (-frets.get(i)[3])), Math.round(frets.get(i)[1]  + 1000 * (frets.get(i)[2] )));
-//            Point pt2 = new Point(Math.round(frets.get(i)[0] - 1000 * (-frets.get(i)[3])), Math.round(frets.get(i)[1]  - 1000 * (frets.get(i)[2] )));
-//            Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 3, Imgproc.LINE_AA, 0);
-//        }
 
         if(marker_found &&
                 frets.size() > info.getChord(index).numFrets() &&
@@ -249,13 +284,21 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         return src;
     }
 
-    private void findMarker() {
-        // Convertir al espacio de color hsv
-        Imgproc.cvtColor(src, hsv, Imgproc.COLOR_BGR2HSV);
-        // Con los limites definidos, aislar el color amarillo de la imagen
-        Core.inRange(hsv, low_limit, high_limit, yellow_img);
 
-        // Extraer todos los contornos que se pueden encontrar
+    /**
+     * findMarker : encuentra el marcador donde inicia el mastil
+     * Primero se cambia del espacio de color BGR al HSV y se queda solo con los pixeles
+     * dentro de los limites superior e inferior definidos
+     * Despues, se extraen los contrornos encontrados en la imagen.
+     *          * Por cada contorno encontrado, se aproxima la forma para que tenga menos irregularidades y
+     *          * se calcula el area d ela figura encontrada.
+     *          * Si la figura tiene un area mayor a la minima y 4 vertices puede ser un marcador,
+     *          * con boundingRect se cogen los elementos distintivos y se guarda como marcador.
+     *
+     */
+    private void findMarker() {
+        Imgproc.cvtColor(src, hsv, Imgproc.COLOR_BGR2HSV);
+        Core.inRange(hsv, low_limit, high_limit, yellow_img);
         List<MatOfPoint> contours = new ArrayList<>();
         Imgproc.findContours(yellow_img, contours, new Mat(), Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
 
@@ -265,7 +308,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             int n_vertices = (int) approx_curve.total();
             double area = Imgproc.contourArea(contour);
 
-            // Descartar los contornos que no son rectangulos y con boundingRect conseguir los elementos distintivos
             if(Math.abs(area)>= min_area && n_vertices == 4) {
                 rectangle = Imgproc.boundingRect(contour);
                 marker_found = true;
@@ -278,27 +320,29 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         }
     }
 
+    /**
+     * detectParallelLines : detecta las lineas que corresponden a los trastes
+     * 1.- se calcula el angulo que tiene el lado del marcador.
+     * 2.- Se inicializa donde se guardara el resultado
+     * 3.- Se transforma el frame original (src) a banco y negro
+     * 4.- Se aplica la funcion Canny para encontrar los bordes en la imagen
+     * 5.- Se ejecuta HoughLines para quedarnos solo con las lineas rectas
+     * 6.- Cuando estan las todas las lineas detectadas se descartan las que no sirven:
+     *      - Si no es paralela al marcador no se añade
+     *      - Si esta muy cerca de otra linea ya añadida se ignora
+     * 7.- Se ordenan todas las lineas de forma ascendente y se eliminan las que son menores que
+     * la posicion del marcador
+     */
     private void detectParallelLines() {
         //Calcular el angulo del lado del marcador
         double alfa = calcAngle(rectangle.x+ rectangle.width, rectangle.y,
                                         rectangle.x + rectangle.width, rectangle.y + rectangle.height);
         Rect marker = rectangle;
-        /*
-        * 1.- Se inicializa donde se guardara el resultado
-        * 2.- Se transforma el frame original (src) a banco y negro
-        * 3.- Se aplica la funcion Canny para encontrar los borden en la imagen
-        * 4.- Se ejecuta HoughLines para quedarnos solo con las lineas rectas
-         */
         dst = new Mat();
         Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY);
         Imgproc.Canny(gray, dst, 50, 200, 3, false);
-        // Para mejorar performance mirar hacerlo con la probabilistica
-        Imgproc.HoughLines(dst, lines, 1, Math.PI/180, 150); // runs the actual detection
+        Imgproc.HoughLines(dst, lines, 1, Math.PI/180, 150);
 
-        /*
-        * Una vez con todas las lineas detectadas se procesa la informacion para eliminar datos
-        * innecesarios
-         */
         frets = new ArrayList<>();
         for (int i = 0; i < lines.rows(); i++) {
             double rho = lines.get(i, 0)[0],
@@ -316,19 +360,10 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                     }
                 }
 
-                if (add){
+                if (add)
                     frets.add(new double[]{x0, y0, a, b});
-//                    Point pt1 = new Point(Math.round(x0 + 1000 * (-b)), Math.round(y0 + 1000 * (a)));
-//                    Point pt2 = new Point(Math.round(x0 - 1000 * (-b)), Math.round(y0 - 1000 * (a)));
-//                    Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 3, Imgproc.LINE_AA, 0);
-                }
             }
         }
-
-        /*
-        * Para seguir eliminando lineas no deseadas y dejarlo para dibujar la informacion se ordena
-        * el array de forma ascendente segun la coordenada x
-         */
 
 //        for (int i = 0; i < frets.size(); i++) {
 //            System.out.println(frets.get(i)[0]);
@@ -341,7 +376,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 //        }
 //
 //        System.out.println("aaaaaa");
-        // Por ultimo, eliminar lineas detectadas a la "izquierda" del marcador
         for (int i = 0; i < frets.size(); i++) {
             if(Double.compare(marker.x+ marker.width, frets.get(i)[0]) > 0) {
 //                System.out.println(frets.get(i)[0]);
@@ -440,47 +474,33 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         return Math.abs(p1-p2) >= tolerance;
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (camera_bridge_view != null) {
-            camera_bridge_view.disableView();
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (!OpenCVLoader.initDebug()) {
-            Toast.makeText(getApplicationContext(), "Ha ocurrido un problema", Toast.LENGTH_SHORT).show();
-        } else {
-            base_loader_callback.onManagerConnected(BaseLoaderCallback.SUCCESS);
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        if (camera_bridge_view != null) {
-            camera_bridge_view.disableView();
-        }
-        cronometro.cancel();
-    }
-
+    /**
+     * translateChord : traduce el array recibido por el servicio a los enums correspondientes
+     */
     private void translateChord() {
         chord_name = NoteNameEnum.get(chord[0]);
         chord_type = ChordTypeEnum.fromInteger(chord[1]);
     }
 
+    /**
+     * drawChord : llama a drawNote por cada nota que lo compone con el color correspondiente
+     * @param c acorde que dibujar
+     */
     private void drawChord(Chord c) {
         for (int i = 0; i < c.size(); i++) {
             drawNote(c.get(i), colors.get(i));
         }
     }
 
+    /**
+     * drawNote : dibuja la figura correspondiente a la nota n, con el color c indicado.
+     *      Si la cuerda indicada es 0 se dibuja una recta por ser una cejilla
+     *      Si es cualquier otro numero se dibuja un circulo
+     * @param n objeto con la cuerda y traste que se necesita
+     * @param c color con el que dibujar la figura
+     */
     private void drawNote(Note n, Scalar c) {
-        double x = (frets.get(n.getFret())[0]+frets.get(n.getFret()-1)[0])/2;
+        double x = (frets.get(n.getFret())[0]+frets.get(n.getFret()-1)[0])/2; // Calcular la posicion entre trastes
 
         double interval = rectangle.height / 6.0;
 

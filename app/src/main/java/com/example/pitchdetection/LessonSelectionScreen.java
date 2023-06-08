@@ -26,6 +26,10 @@ public class LessonSelectionScreen extends AppCompatActivity {
         names.add(new Pair<>("Clase 1\nAcordes mayores", LessonName.Major));
         names.add(new Pair<>("Clase 2\nAcordes menores", LessonName.Minor));
         names.add(new Pair<>("Clase 3\nAcordes de 7ª dominante", LessonName.Dominant));
+        names.add(new Pair<>("Clase 4\nProgresion I-IV-V en C", LessonName.Progression145_C));
+        names.add(new Pair<>("Clase 5\nProgresion I-VI-IV-V en C", LessonName.Progression1645_C));
+        names.add(new Pair<>("Clase 6\nProgresion I-V-I-IV en C", LessonName.Progression1514_C));
+        names.add(new Pair<>("Clase 7\nProgresion I-IV-V en E", LessonName.Progression145_E));
 
         setUpCarousel();
     }
