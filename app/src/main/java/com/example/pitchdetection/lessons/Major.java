@@ -34,12 +34,12 @@ public class Major extends Lesson{
         e_major.add(new Note(4,2));
         chords.add(e_major);
 
-        Chord f_major = new Chord(NoteNameEnum.F, ChordTypeEnum.Major);
-        f_major.add(new Note(0,1));
-        f_major.add(new Note(3,2));
-        f_major.add(new Note(5,3));
-        f_major.add(new Note(4,3));
-        chords.add(f_major);
+//        Chord f_major = new Chord(NoteNameEnum.F, ChordTypeEnum.Major);
+//        f_major.add(new Note(0,1));
+//        f_major.add(new Note(3,2));
+//        f_major.add(new Note(5,3));
+//        f_major.add(new Note(4,3));
+//        chords.add(f_major);
 
         Chord g_major = new Chord(NoteNameEnum.G, ChordTypeEnum.Major);
         g_major.add(new Note(2,2));
@@ -53,11 +53,11 @@ public class Major extends Lesson{
         a_major.add(new Note(2,2));
         chords.add(a_major);
 
-        Chord b_major = new Chord(NoteNameEnum.B, ChordTypeEnum.Major);
-        b_major.add(new Note(0,2));
-        b_major.add(new Note(4,4));
-        b_major.add(new Note(3,4));
-        b_major.add(new Note(2,4));
-        chords.add(b_major);
+//        Chord b_major = new Chord(NoteNameEnum.B, ChordTypeEnum.Major);
+//        b_major.add(new Note(0,2));
+//        b_major.add(new Note(4,4));
+//        b_major.add(new Note(3,4));
+//        b_major.add(new Note(2,4));
+//        chords.add(b_major);
     }
 }

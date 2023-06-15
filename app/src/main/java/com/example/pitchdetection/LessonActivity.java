@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.util.Log;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -167,7 +166,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                      * La deteccion de trastes se hace con un Timer,
                      * la ejecucion empieza despues de crearse
                      * la actividad.
-                     * Se ejecuta la funcion cada 3 segundos
+                     * Se ejecuta la funcion cada 5 segundos
                      */
                     cronometro = new Timer();
                     cronometro.schedule(new TimerTask() {
@@ -179,7 +178,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                                     detectParallelLines();
                                 }catch (Exception e){}
                         }
-                    }, 0, 500);
+                    }, 0, 5000);
                 } else {
                     super.onManagerConnected(status);
                 }
@@ -254,9 +253,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         chord = service.getChord();
         translateChord();
-        // DEBUG
-        //Log.e("Acorde: ", chord_name.toString() + " " + chord_type.toString());
-        //Log.e("Info: ", info.getChord(index).getName().toString() + " " +info.getChord(index).getType().toString());
 
         // Obtener frame en color, se usara dentro de las funciones
         src = inputFrame.rgba();
@@ -269,6 +265,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             findMarker();
         } catch (Exception e) {}
 
+        for (int i = 0; i < frets.size(); i++) {
+            Point pt = new Point(frets.get(i)[0], frets.get(0)[1]);
+
+            Imgproc.circle(src, pt, 20,new Scalar(0,255,0), -1);
+        }
+
 
         if(marker_found &&
                 frets.size() > info.getChord(index).numFrets() &&
@@ -279,7 +281,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 index++;
         }
 
-        Imgproc.putText(src, index+"", new Point(170,280), 0,1,new Scalar(255,0,0), 4);
+        if(index >= info.size()) {
+            Intent change = new Intent(this, LessonSelectionScreen.class);
+            startActivity(change);
+        }
+
+        Imgproc.putText(src, index+"", new Point(170,280), 0,3,new Scalar(0,0,0), 4);
 
         return src;
     }
@@ -308,14 +315,14 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             int n_vertices = (int) approx_curve.total();
             double area = Imgproc.contourArea(contour);
 
-            if(Math.abs(area)>= min_area && n_vertices == 4) {
+            if(Math.abs(area) >= min_area && n_vertices == 4) {
                 rectangle = Imgproc.boundingRect(contour);
                 marker_found = true;
                 // DEBUG
-                Imgproc.line(src,
-                        new Point(rectangle.x+ rectangle.width, rectangle.y),
-                        new Point(rectangle.x+rectangle.width, rectangle.y+rectangle.height),
-                        new Scalar(0,0,255),10);
+//                Imgproc.line(src,
+//                        new Point(rectangle.x+ rectangle.width, rectangle.y),
+//                        new Point(rectangle.x+rectangle.width, rectangle.y+rectangle.height),
+//                        new Scalar(0,0,255),10);
             }
         }
     }
@@ -344,6 +351,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         Imgproc.HoughLines(dst, lines, 1, Math.PI/180, 150);
 
         frets = new ArrayList<>();
+        frets.add(new double[]{rectangle.x+rectangle.width, rectangle.y});
         for (int i = 0; i < lines.rows(); i++) {
             double rho = lines.get(i, 0)[0],
                     theta = lines.get(i, 0)[1];
@@ -351,7 +359,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             double x0 = a*rho, y0 = b*rho;
 
             // Solo añadir la linea a los trastes si es paralela al marcador
-            if (compareAngle(alfa, theta)){
+            if (compareAngles(alfa, theta)){
+                System.out.println(theta);
                 // Comprobar si hay otra linea demasiado cerca, si no es el caso se acaba añadiendo
                 boolean add = true;
                 for (int j = 0; j < frets.size() && add; j++) {
@@ -417,7 +426,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             double line_angle = calcAngle(l[0], l[1], l[2], l[3]);
 
             // Solo añadir la linea a los trastes si es paralela al marcador
-            if (compareAngle(alfa, line_angle)){
+            if (compareAngles(alfa, line_angle)){
+                System.out.println(line_angle);
                 // Comprobar si hay otra linea demasiado cerca, si no es el caso se acaba añadiendo
                 boolean add = true;
                 for (int j = 0; j < frets.size() && add; j++) {
@@ -449,7 +459,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     }
 
     /**
-     * caclAngle : calcula el angulo de la recta que forman los puntos
+     * calcAngle : calcula el angulo de la recta que forman los puntos
      * @param x1 : coordenada x del primer punto
      * @param y1 : coordenada y del primer punto
      * @param x2 : coordenada x del segundo punto
@@ -463,15 +473,13 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     }
 
     /**
-     * compareAngle : comprueba si dos angulos son iguales
-     * @param p1    : angulo 1
-     * @param p2    : angulo 2
+     * compareAngles : comprueba si dos pendientes son iguales
+     * @param p1    : pendiente 1
+     * @param p2    : pendiente 2
      * @return      : true si son iguales, false si no
      */
-    private boolean compareAngle(double p1, double p2) {
-        double tolerance = 85 * Math.PI / 180;
-
-        return Math.abs(p1-p2) >= tolerance;
+    private boolean compareAngles(double p1, double p2) {
+        return Math.abs(p1-p2) <= 1.5;
     }
 
     /**
@@ -500,7 +508,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      * @param c color con el que dibujar la figura
      */
     private void drawNote(Note n, Scalar c) {
-        double x = (frets.get(n.getFret())[0]+frets.get(n.getFret()-1)[0])/2; // Calcular la posicion entre trastes
+        double x = (frets.get(n.getFret()-1)[0]+frets.get(n.getFret())[0])/2; // Calcular la posicion entre trastes
 
         double interval = rectangle.height / 6.0;
 
@@ -517,7 +525,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             Imgproc.circle(src,
                     new Point(x,
                             (rectangle.y + rectangle.height) - interval * (n.getString())),
-                    30, c,-1);
+                    20, c,-1);
         }
     }
 }
