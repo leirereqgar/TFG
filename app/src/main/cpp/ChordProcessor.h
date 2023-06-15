@@ -9,11 +9,7 @@ class ChordProcessor {
 private:
     const int FRAMESIZE  = 512;
     const int SAMPLERATE = 44100;
-    const int NUMHARMONICS = 2;
-    const int NUMOCTAVES = 2;
-    const int NUMBINSTOSEARCH = 2;
-    ChordProcessor * chordProcessor;
-    Chromagram chromagram = Chromagram(0, 0);
+    Chromagram chromagram = Chromagram(FRAMESIZE,SAMPLERATE);
     double * chroma_vector = new double [12];
     int * chord_output = new int[2];
     ChordDetector cd;
@@ -30,11 +26,6 @@ public:
     static double* fft(double* inputReal, int length, bool DIRECT);
     static double* fft(double* inputReal, double* inputImag, int length, bool DIRECT);
     static int bitReverseReference(int j, int nu);
-
-    /**Audio Features**/
-    static double getAverageLevel(double samples[], int length);
-    static double getSpectralFlatness(double* inputSamples, int vectorLength);
-
 };
 
 

@@ -27,15 +27,6 @@ double* ChordProcessor::getChromagram() {
     return chroma_vector;
 }
 
-double ChordProcessor::getAverageLevel(double* samples, int length) {
-    double sumOfSamples = 0.0;
-    for (int i = 0; i < length; i++) {
-        sumOfSamples += samples[i];
-    }
-    return (sumOfSamples / (double)length);
-}
-
-
 double* ChordProcessor::fft(double* inputReal, int length, bool DIRECT) {
     return fft(inputReal, NULL, length, DIRECT);
 }
