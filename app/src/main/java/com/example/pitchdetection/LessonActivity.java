@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.SurfaceView;
@@ -60,10 +61,10 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     Timer cronometro;
 
     /*
-     * VARIABLES PARA LOS ACORDES
+     * VARIABLES PARA RECONOCIMIENTO DE ACORDES
      */
-    NoteNameEnum chord_name  = NoteNameEnum.A;
-    ChordTypeEnum chord_type = ChordTypeEnum.Major;
+    NoteNameEnum chord_name  = NoteNameEnum.NO_NOTE;
+    ChordTypeEnum chord_type = ChordTypeEnum.NoChord;
     int [] chord             = new int [2];
     ArrayList<Scalar> colors;
 
@@ -282,6 +283,11 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         }
 
         if(index >= info.size()) {
+            SharedPreferences sh = this.getPreferences(Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = sh.edit();
+            editor.putString(lesson_name, "completed");
+            editor.apply();
+
             Intent change = new Intent(this, LessonSelectionScreen.class);
             startActivity(change);
         }

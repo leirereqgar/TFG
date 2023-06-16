@@ -4,7 +4,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.helper.widget.Carousel;
 import androidx.core.util.Pair;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -50,6 +52,8 @@ public class LessonSelectionScreen extends AppCompatActivity {
 
             @Override
             public void populate(View view, int index) {
+                SharedPreferences sh = getPreferences(Context.MODE_PRIVATE);
+                String status = sh.getString(names.get(index).first, "");
                 ((Button)view).setText(names.get(index).first);
 
                 view.setOnClickListener(new View.OnClickListener(){
