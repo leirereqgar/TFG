@@ -5,30 +5,23 @@
     <color name="purple_700">#FF3700B3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
-
-    <color name="colorPrimary">@color/yellow_45e</color>
-    <color name="colorPrimaryDark">@color/yellow_e4b</color>
-    <color name="colorAccent">@color/blue_1b5</color>
-    <color name="textColorPrimary">@color/white_9ff</color>
-    <color name="toolbarIconColor">@color/textColorPrimary</color>
-    <color name="background">@color/black_d23</color>
     <color name="productGridBackgroundColor">#FFFFFF</color>
     <color name="textInputOutlineColor">#FBB8AC</color>
 
+    <color name="colorPrimary">@color/energy_yellow</color>
+    <color name="colorPrimaryDark">@color/yellow_e4b</color>
+    <color name="colorAccent">@color/boston_blue</color>
+    <color name="textColorPrimary">@color/white_pointer</color>
+    <color name="toolbarIconColor">@color/textColorPrimary</color>
+    <color name="background">@color/baltic_sea</color>
 
-
-    <color name="yellow_17c">#ffe17c</color>
-    <color name="yellow_45e">#f6d45e</color>
+    <color name="energy_yellow">#f6d45e</color>
     <color name="yellow_e4b">#c49e4b</color>
 
-    <color name="blue_1b5">#32a1b5</color>
-    <color name="blue_63f">#00363f</color>
-    <color name="blue_0d2">#5dc0d2</color>
+    <color name="boston_blue">#32a1b5</color>
 
-    <color name="pink_0c8">#ffb0c8</color>
-    <color name="pink_7a6">#f977a6</color>
-    <color name="pink_a4a">#851a4a</color>
+    <color name="tickle_me_pink">#f977a6</color>
 
-    <color name="black_d23">#221d23</color>
-    <color name="white_9ff">#fef9ff</color>
+    <color name="baltic_sea">#221d23</color>
+    <color name="white_pointer">#fef9ff</color>
 </resources>

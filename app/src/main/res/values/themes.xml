@@ -7,64 +7,25 @@
         <item name="colorAccent">@color/colorAccent</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:textColorPrimary">@color/textColorPrimary</item>
-
-
-        <!--        &lt;!&ndash; Primary brand color. &ndash;&gt;-->
-<!--        <item name="colorPrimary">@color/yellow_primary</item>-->
-<!--        <item name="colorPrimaryVariant">@color/yellow_primary_container</item>-->
-<!--        <item name="colorOnPrimary">@color/yellow_on_primary</item>-->
-<!--        &lt;!&ndash; Secondary brand color. &ndash;&gt;-->
-<!--        <item name="colorSecondary">@color/blue_secondary</item>-->
-<!--        <item name="colorSecondaryVariant">@color/blue_secondary_container</item>-->
-<!--        <item name="colorOnSecondary">@color/blue_on_secondary_container</item>-->
-<!--        &lt;!&ndash; Status bar color. &ndash;&gt;-->
-<!--        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>-->
-<!--        &lt;!&ndash; Customize your theme here. &ndash;&gt;-->
-<!--        <item name="android:background">@color/black</item>-->
     </style>
 
     <style name="Theme.GuitAR.background" parent="Theme.GuitAR">
         <item name="android:background">@color/background</item>
     </style>
 
-    <style name="Theme.GuitAR.FullScreen" parent="Theme.GuitAR">
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:windowContentOverlay">@null</item>
-    </style>
-
-    <style name="Widget.GuitAR.Toolbar" parent="Widget.AppCompat.Toolbar">
-        <item name="android:background">?attr/colorAccent</item>
-        <item name="android:theme">@style/Theme.GuitAR</item>
-        <item name="popupTheme">@style/ThemeOverlay.AppCompat.Light</item>
-    </style>
-
-    <style name="Widget.GuitAR.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-        <item name="hintTextAppearance">@style/TextAppearance.GuitAR.TextInputLayout.HintText</item>
-        <item name="hintTextColor">@color/textColorPrimary</item>
-        <item name="android:paddingBottom">8dp</item>
-        <item name="boxStrokeColor">@color/textInputOutlineColor</item>
-    </style>
-
-    <style name="TextAppearance.GuitAR.TextInputLayout.HintText" parent="TextAppearance.MaterialComponents.Subtitle2">
-        <item name="android:textColor">?android:attr/textColorPrimary</item>
-    </style>
-
-    <style name="Widget.GuitAR.Button" parent="Widget.MaterialComponents.Button">
-        <item name="android:textColor">?android:attr/textColorPrimary</item>
-        <item name="backgroundTint">?attr/colorAccent</item>
-    </style>
-
-    <style name="Widget.GuitAR.Button.TextButton" parent="Widget.MaterialComponents.Button.TextButton">
-        <item name="android:textColor">?android:attr/textColorPrimary</item>
-        <item name="android:paddingBottom">10dp</item>
-    </style>
-
-    <style name="Widget.GuitAR.TextView" parent="Widget.MaterialComponents.TextView">
+    <style name="Widget.GuitAR.TextView" parent="TextAppearance.MaterialComponents.Subtitle2">
         <item name="android:textColor">?android:attr/textColorPrimary</item>
         <item name="android:layout_marginStart">10dp</item>
         <item name="android:padding">5dp</item>
     </style>
 
-
+    <style name="Widget.GuitAR.Button" parent="Widget.MaterialComponents.Button">
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
+        <item name="backgroundTint">?attr/colorAccent</item>
+        <item name="android:textSize">20dp</item>
+        <item name="android:paddingBottom">10dp</item>
+        <item name="android:layout_marginStart">10dp</item>
+        <item name="android:layout_marginTop">10dp</item>
+    </style>
 
 </resources>

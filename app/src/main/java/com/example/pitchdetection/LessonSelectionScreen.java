@@ -54,7 +54,7 @@ public class LessonSelectionScreen extends AppCompatActivity {
             public void populate(View view, int index) {
                 SharedPreferences sh = getPreferences(Context.MODE_PRIVATE);
                 String status = sh.getString(names.get(index).first, "");
-                ((Button)view).setText(names.get(index).first);
+                ((Button)view).setText(names.get(index).first + "\n\n" + status);
 
                 view.setOnClickListener(new View.OnClickListener(){
                     @Override
