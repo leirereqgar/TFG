@@ -41,6 +41,6 @@ public class Chord {
     }
 
     public String toString() {
-        return name.toString() + "  " + type.toString();
+        return name.toString() + " " + type.toString();
     }
 }
