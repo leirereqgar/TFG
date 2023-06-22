@@ -1,4 +1,4 @@
-package com.example.pitchdetection;
+package com.example.GuitAR;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -13,11 +13,11 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.pitchdetection.enums.ChordTypeEnum;
-import com.example.pitchdetection.enums.NoteNameEnum;
-import com.example.pitchdetection.lessons.*;
-import com.example.pitchdetection.services.ChordRecognitionService;
-import com.example.pitchdetection.services.ChordRecognitionService.ChordRecognitionBinder;
+import com.example.GuitAR.enums.ChordTypeEnum;
+import com.example.GuitAR.enums.NoteNameEnum;
+import com.example.GuitAR.lessons.*;
+import com.example.GuitAR.services.ChordRecognitionService;
+import com.example.GuitAR.services.ChordRecognitionService.ChordRecognitionBinder;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -260,7 +260,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         // Voltear la imagen en el eje y para que actue como un espejo
         Core.flip(src, src, 1);
 
-        Imgproc.putText(src, lesson_name, new Point(350,280), 0,4,new Scalar(0,0,0), 4);
+        Imgproc.putText(src, info.getChord(index).toString(),
+                new Point(350,280), 1,4,new Scalar(0,0,0), 4);
 
         try {
             findMarker();
@@ -325,6 +326,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 rectangle = Imgproc.boundingRect(contour);
                 marker_found = true;
                 // DEBUG
+                Imgproc.rectangle(src, new Point(rectangle.x, rectangle.y),
+                        new Point(rectangle.x+rectangle.width, rectangle.y+rectangle.height),
+                        new Scalar(0,0,255), 3, Imgproc.LINE_8);
 //                Imgproc.line(src,
 //                        new Point(rectangle.x+ rectangle.width, rectangle.y),
 //                        new Point(rectangle.x+rectangle.width, rectangle.y+rectangle.height),

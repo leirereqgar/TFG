@@ -1,4 +1,4 @@
-package com.example.pitchdetection.enums;
+package com.example.GuitAR.enums;
 
 public enum NoteNameEnum {
     NO_NOTE(-1),

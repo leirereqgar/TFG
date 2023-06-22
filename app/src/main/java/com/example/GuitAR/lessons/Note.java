@@ -1,6 +1,6 @@
-package com.example.pitchdetection.lessons;
+package com.example.GuitAR.lessons;
 
-import com.example.pitchdetection.enums.NoteNameEnum;
+import com.example.GuitAR.enums.NoteNameEnum;
 
 public class Note {
     NoteNameEnum name;

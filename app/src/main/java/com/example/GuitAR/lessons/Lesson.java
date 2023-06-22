@@ -1,8 +1,8 @@
-package com.example.pitchdetection.lessons;
+package com.example.GuitAR.lessons;
 
 import java.util.ArrayList;
 
-import com.example.pitchdetection.enums.ChordTypeEnum;
+import com.example.GuitAR.enums.ChordTypeEnum;
 
 public abstract class Lesson {
     ChordTypeEnum code;

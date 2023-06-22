@@ -1,15 +1,14 @@
-package com.example.pitchdetection.lessons;
+package com.example.GuitAR.lessons;
 
-import com.example.pitchdetection.enums.ChordTypeEnum;
-import com.example.pitchdetection.enums.NoteNameEnum;
+import com.example.GuitAR.enums.ChordTypeEnum;
+import com.example.GuitAR.enums.NoteNameEnum;
 
 import java.util.ArrayList;
 
-public class Progression1645C extends Lesson{
-    public Progression1645C() {
+public class Progression145C extends Lesson{
+    public Progression145C() {
         init();
     }
-
     @Override
     void init() {
         code = ChordTypeEnum.Major;
@@ -21,12 +20,6 @@ public class Progression1645C extends Lesson{
         c_major.add(new Note(4,2));
         c_major.add(new Note(5,3));
         chords.add(c_major);
-
-        Chord a_minor = new Chord(NoteNameEnum.A, ChordTypeEnum.Minor);
-        a_minor.add(new Note(2,1));
-        a_minor.add(new Note(4,2));
-        a_minor.add(new Note(3,2));
-        chords.add(a_minor);
 
         Chord f_major = new Chord(NoteNameEnum.F, ChordTypeEnum.Major);
         f_major.add(new Note(0,1));
@@ -42,15 +35,12 @@ public class Progression1645C extends Lesson{
         chords.add(g_major);
 
         chords.add(c_major);
-        chords.add(a_minor);
         chords.add(f_major);
         chords.add(g_major);
         chords.add(c_major);
-        chords.add(a_minor);
         chords.add(f_major);
         chords.add(g_major);
         chords.add(c_major);
-        chords.add(a_minor);
         chords.add(f_major);
         chords.add(g_major);
     }

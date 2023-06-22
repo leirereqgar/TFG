@@ -1,4 +1,4 @@
-package com.example.pitchdetection.enums;
+package com.example.GuitAR.enums;
 
 public enum ChordTypeEnum {
     Minor(0),

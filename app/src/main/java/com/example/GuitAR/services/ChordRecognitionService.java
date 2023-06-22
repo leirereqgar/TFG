@@ -1,4 +1,4 @@
-package com.example.pitchdetection.services;
+package com.example.GuitAR.services;
 
 import android.annotation.SuppressLint;
 import android.app.Service;

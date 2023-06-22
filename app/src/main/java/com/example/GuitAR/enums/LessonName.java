@@ -1,4 +1,4 @@
-package com.example.pitchdetection.enums;
+package com.example.GuitAR.enums;
 
 public enum LessonName {
     Major(1),

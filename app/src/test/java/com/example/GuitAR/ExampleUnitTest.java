@@ -1,4 +1,4 @@
-package com.example.pitchdetection;
+package com.example.GuitAR;
 
 import org.junit.Test;
 

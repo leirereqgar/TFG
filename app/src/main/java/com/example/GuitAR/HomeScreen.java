@@ -1,4 +1,4 @@
-package com.example.pitchdetection;
+package com.example.GuitAR;
 
 import static android.Manifest.permission.CAMERA;
 import static android.Manifest.permission.RECORD_AUDIO;

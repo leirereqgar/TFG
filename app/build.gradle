@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.example.pitchdetection'
+    namespace 'com.example.GuitAR'
     compileSdk 32
 
     defaultConfig {
-        applicationId "com.example.pitchdetection"
+        applicationId 'com.example.GuitAR'
         minSdk 28
         targetSdk 32
         versionCode 1
