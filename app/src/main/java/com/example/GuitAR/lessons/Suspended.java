@@ -6,6 +6,9 @@ import com.example.GuitAR.enums.NoteNameEnum;
 import java.util.ArrayList;
 
 public class Suspended extends Lesson{
+    public Suspended() {
+        init();
+    }
     @Override
     void init() {
         code = ChordTypeEnum.Suspended;

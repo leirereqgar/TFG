@@ -6,6 +6,9 @@ import com.example.GuitAR.enums.NoteNameEnum;
 import java.util.ArrayList;
 
 public class Dominant extends Lesson{
+    public Dominant() {
+        init();
+    }
     @Override
     public void init() {
         code = ChordTypeEnum.Dominant;
