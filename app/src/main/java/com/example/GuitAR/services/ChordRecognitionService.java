@@ -58,7 +58,6 @@ public class ChordRecognitionService extends Service {
 
     public void process() {
         short[] temp_samples = new short[BUFFER_SIZE];
-        int n_read;
         @SuppressLint("MissingPermission")
         AudioRecord r = new AudioRecord(MediaRecorder.AudioSource.DEFAULT,
                                 44100,
@@ -68,7 +67,6 @@ public class ChordRecognitionService extends Service {
         r.startRecording();
         keep_recording = true;
         while(keep_recording) {
-            n_read = r.read(temp_samples, 0, temp_samples.length);
             audio_samples_buffer = getSamplesToDouble(temp_samples);
             audio_samples_buffer_window = window(audio_samples_buffer);
             audio_spectrum_buffer = bandPassFilter(
@@ -77,6 +75,14 @@ public class ChordRecognitionService extends Service {
             chord = chordDetection(audio_samples_buffer_window,
                                     audio_spectrum_buffer);
         }
+
+        r.stop();
+        r.release();
+        r = null;
+    }
+
+    public void stopProcessing() {
+        keep_recording = false;
     }
 
     private static double[] getSamplesToDouble(short[] inputBuffer) {

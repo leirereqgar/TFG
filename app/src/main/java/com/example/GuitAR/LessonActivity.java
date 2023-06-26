@@ -193,7 +193,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         //Asociar el service para ir escuchando las frecuencias
         Intent service_intent = new Intent(this, ChordRecognitionService.class);
         bindService(service_intent, connection, Context.BIND_AUTO_CREATE);
-        bindService(service_intent, connection, Context.BIND_AUTO_CREATE);
         startService(service_intent);
     }
 
@@ -201,6 +200,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     public void onStop() {
         super.onStop();
         //Desasociar el servicio para evitar errores en un futuro
+        service.stopProcessing();
         Intent service_intent = new Intent(this, ChordRecognitionService.class);
         stopService(service_intent);
         unbindService(connection);
@@ -287,6 +287,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             SharedPreferences.Editor editor = sh.edit();
             editor.putString(lesson_name, "completed");
             editor.apply();
+            service.stopProcessing();
 
             Intent change = new Intent(this, LessonSelectionScreen.class);
             startActivity(change);
