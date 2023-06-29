@@ -7,6 +7,7 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.DisplayMetrics;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -30,6 +31,7 @@ import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
@@ -50,7 +52,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     ArrayList<double[]> frets;
 
     // Almacena los valores del marcador (esquina superior, ancho y alto)
-    Rect rectangle;
+    Rect marker;
     Boolean marker_found = false;
 
     // Limites superior e inferior del color amarillo en el espacio hsv
@@ -142,8 +144,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         camera_bridge_view = findViewById(R.id.cameraViewer);
         camera_bridge_view.setMaxFrameSize(1920,1080);
         camera_bridge_view.setVisibility(SurfaceView.VISIBLE);
+        //DisplayMetrics metrics = getResources().getDisplayMetrics();
         //Descomentar para camara frontal
-        camera_bridge_view.setCameraIndex(1); //DEBUG
+        camera_bridge_view.setCameraIndex(0); //DEBUG
         camera_bridge_view.setCvCameraViewListener(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); //Mantener pantalla encendida para que no entre en suspension
 
@@ -179,7 +182,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                                     detectParallelLines();
                                 }catch (Exception e){}
                         }
-                    }, 500, 5000);
+                    }, 0, 1000);
                 } else {
                     super.onManagerConnected(status);
                 }
@@ -252,13 +255,13 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      */
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        chord = service.getChord();
+        //chord = service.getChord();
         translateChord();
 
         // Obtener frame en color, se usara dentro de las funciones
         src = inputFrame.rgba();
         // Voltear la imagen en el eje y para que actue como un espejo
-        Core.flip(src, src, 1);
+        //Core.flip(src, src, 1);
 
         printActualChordInfo();
 
@@ -330,11 +333,11 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             double area = Imgproc.contourArea(contour);
 
             if(Math.abs(area) >= min_area && n_vertices == 4) {
-                rectangle = Imgproc.boundingRect(contour);
+                marker = Imgproc.boundingRect(contour);
                 marker_found = true;
                 // DEBUG
-                Imgproc.rectangle(src, new Point(rectangle.x, rectangle.y),
-                        new Point(rectangle.x+rectangle.width, rectangle.y+rectangle.height),
+                Imgproc.rectangle(src, new Point(marker.x, marker.y),
+                        new Point(marker.x+ marker.width, marker.y+ marker.height),
                         new Scalar(0,0,255), 3, Imgproc.LINE_8);
             }
         }
@@ -356,16 +359,18 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      */
     private void detectParallelLines() {
         //Calcular el angulo del lado del marcador
-        double alfa = calcAngle(rectangle.x+ rectangle.width, rectangle.y,
-                                        rectangle.x + rectangle.width, rectangle.y + rectangle.height);
-        Rect marker = rectangle;
+        double alfa = calcAngle(marker.x+ marker.width, marker.y,
+                                marker.x + marker.width, marker.y + marker.height);
+
         dst = new Mat();
         Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY);
         Imgproc.Canny(gray, dst, 50, 200, 3, false);
+        Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size((2*2) + 1, (2*2)+1));
+        Imgproc.dilate(dst, dst, kernel);
         Imgproc.HoughLines(dst, lines, 1, Math.PI/180, 150);
 
         frets = new ArrayList<>();
-        frets.add(new double[]{rectangle.x+rectangle.width, rectangle.y});
+        frets.add(new double[]{marker.x+ marker.width, marker.y});
         //System.out.println("Marcador" + (rectangle.x));
         for (int i = 0; i < lines.rows(); i++) {
             double rho = lines.get(i, 0)[0],
@@ -380,9 +385,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 // se aniade
                 boolean add = true;
                 for (int j = 0; j < frets.size() && add; j++) {
-                    if (Math.abs(frets.get(j)[0] - x0) < 50 || x0 < 0
+                    if (Math.abs(frets.get(j)[0] - x0) < 70 || x0 < 0
                       || Double.compare(marker.x + marker.width, x0) > 0) {
-                        System.out.println(x0);
+                        //System.out.println(x0);
                         add = false;
                     }
                 }
@@ -394,6 +399,16 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         }
 
         frets.sort(Comparator.comparingDouble(d -> d[0]));
+
+
+        double scale_length = 350;
+        double rule_cte = 17.817;
+
+        for (int i = 1; i < frets.size(); i++) {
+            double d = calcRealDistance(frets.get(i)[0], frets.get(i-1)[0]);
+            System.out.println(i + " " + (i-1)+ " " + d+"");
+        }
+
         //DEBUG
         //System.out.println("marcador:" + (marker.x+marker.width));
 //        for (int i = 0; i < frets.size(); i++) {
@@ -417,6 +432,18 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     }
 
     /**
+     * calcRealDistance : calcula la distancia real entre dos puntos en cm (solo en una coordenada)
+     * @param x1        : coordenada x del primer punto
+     * @param x2        : coordenada x del segundo punto
+     * @return          : distancia real en cm de ambos puntos
+     */
+    private double calcRealDistance(double x1, double x2) {
+        int dpi = getResources().getDisplayMetrics().densityDpi;
+        double inches2cm = 2.54;
+        return Math.abs(x2 -x1) * inches2cm / dpi;
+    }
+
+    /**
      * calcAngle : calcula el angulo de la recta que forman los puntos
      * @param x1 : coordenada x del primer punto
      * @param y1 : coordenada y del primer punto
@@ -432,9 +459,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
     /**
      * compareAngles : comprueba si dos pendientes son iguales
-     * @param p1    : pendiente 1
-     * @param p2    : pendiente 2
-     * @return      : true si son iguales, false si no
+     * @param p1     : pendiente 1
+     * @param p2     : pendiente 2
+     * @return       : true si son iguales, false si no
      */
     private boolean compareAngles(double p1, double p2) {
         return Math.abs(p1-p2) <= 1.5;
@@ -466,24 +493,23 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      * @param c color con el que dibujar la figura
      */
     private void drawNote(Note n, Scalar c) {
-        double x = (frets.get(n.getFret()-1)[0]+frets.get(n.getFret())[0])/2; // Calcular la posicion entre trastes
+        if(!frets.isEmpty()){
+            double x = (frets.get(n.getFret() - 1)[0] + frets.get(n.getFret())[0]) / 2; // Calcular la posicion entre trastes
 
-        double interval = rectangle.height / 6.0;
+            double interval = marker.height / 6.0;
 
-        if (n.getString() == 0){
-            Imgproc.line(src,
-                    new Point(frets.get(n.getFret()-1)[0],
-                            rectangle.y),
-                    new Point(frets.get(n.getFret()-1)[0],
-                            rectangle.y + rectangle.height),
-                    c,
-                    10);
-        }
-        else{
-            Imgproc.circle(src,
-                    new Point(x,
-                            (rectangle.y + rectangle.height) - interval * (n.getString())),
-                    20, c,-1);
+            if (n.getString() == 0) {
+                Imgproc.line(src,
+                        new Point(x, marker.y),
+                        new Point(x,
+                                marker.y + marker.height),
+                        c, 10);
+            } else {
+                Imgproc.circle(src,
+                        new Point(x,
+                                (marker.y + marker.height) - interval * (n.getString())),
+                        20, c, -1);
+            }
         }
     }
 }
