@@ -142,7 +142,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         colors.add(new Scalar(254, 249, 255));// White 4
 
         camera_bridge_view = findViewById(R.id.cameraViewer);
-        camera_bridge_view.setMaxFrameSize(1920,1080);
+        camera_bridge_view.setMaxFrameSize(getResources().getDisplayMetrics().widthPixels,getResources().getDisplayMetrics().heightPixels);
         camera_bridge_view.setVisibility(SurfaceView.VISIBLE);
         //DisplayMetrics metrics = getResources().getDisplayMetrics();
         //Descomentar para camara frontal
@@ -255,11 +255,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      */
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        //chord = service.getChord();
+        chord = service.getChord();
         translateChord();
 
         // Obtener frame en color, se usara dentro de las funciones
-        src = inputFrame.rgba();
+        src  = inputFrame.rgba();
+        gray = inputFrame.rgba();
         // Voltear la imagen en el eje y para que actue como un espejo
         //Core.flip(src, src, 1);
 
@@ -357,13 +358,14 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      *      - Tiene coordenada x negativa
      * 7.- Se ordenan todas las lineas de forma ascendente
      */
+    private final double rule_cte = 17.817;
     private void detectParallelLines() {
         //Calcular el angulo del lado del marcador
         double alfa = calcAngle(marker.x+ marker.width, marker.y,
                                 marker.x + marker.width, marker.y + marker.height);
 
         dst = new Mat();
-        Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY);
+        Imgproc.cvtColor(gray, gray, Imgproc.COLOR_BGR2GRAY);
         Imgproc.Canny(gray, dst, 50, 200, 3, false);
         Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size((2*2) + 1, (2*2)+1));
         Imgproc.dilate(dst, dst, kernel);
@@ -385,7 +387,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 // se aniade
                 boolean add = true;
                 for (int j = 0; j < frets.size() && add; j++) {
-                    if (Math.abs(frets.get(j)[0] - x0) < 70 || x0 < 0
+                    if (Math.abs(frets.get(j)[0] - x0) < 100 || x0 < 0
                       || Double.compare(marker.x + marker.width, x0) > 0) {
                         //System.out.println(x0);
                         add = false;
@@ -400,14 +402,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
         frets.sort(Comparator.comparingDouble(d -> d[0]));
 
+        double scale_length = 65;
 
-        double scale_length = 350;
-        double rule_cte = 17.817;
-
-        for (int i = 1; i < frets.size(); i++) {
-            double d = calcRealDistance(frets.get(i)[0], frets.get(i-1)[0]);
-            System.out.println(i + " " + (i-1)+ " " + d+"");
-        }
+        checkFrets();
 
         //DEBUG
         //System.out.println("marcador:" + (marker.x+marker.width));
@@ -440,7 +437,62 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     private double calcRealDistance(double x1, double x2) {
         int dpi = getResources().getDisplayMetrics().densityDpi;
         double inches2cm = 2.54;
-        return Math.abs(x2 -x1) * inches2cm / dpi;
+        return Math.abs(x2 - x1)*inches2cm/440;
+    }
+
+    private void checkFrets() {
+        int size = frets.size();
+        ArrayList<double[]> frets_copy;
+        ArrayList<double[]> candidates= new ArrayList<>();
+        candidates.add(frets.get(0));
+        candidates.add(frets.get(1));
+        int i = 1, max = 2;
+        while (i < size) {
+            frets_copy =  new ArrayList<>(frets);
+            double d = Math.abs(frets.get(i)[0] - frets.get(0)[0]);
+            System.out.println(i + " " + (i-1)+ " " + d + "");
+            double l = d * rule_cte;
+            checkFret(i,l,d,frets_copy,candidates);
+
+            frets_copy.remove(i);
+            size--;
+
+            if(candidates.size() >= max){
+                max = candidates.size();
+            }
+            else {
+                candidates.clear();
+                candidates.add(frets_copy.get(0));
+                candidates.add(frets_copy.get(i));
+            }
+        }
+
+        if(candidates.size() > 2) {
+            frets = candidates;
+            System.out.println("cambio");
+        }
+        else {
+            frets.clear();
+        }
+    }
+    private void checkFret(int i, double l, double dist,ArrayList<double[]> frets_copy, ArrayList<double[]> candidates) {
+        int j = i+1;
+        boolean cont = true;
+        if (j != (frets_copy.size()-1)){
+            while (j < frets_copy.size() && cont) {
+                double d = Math.abs(frets_copy.get(j)[0] - frets_copy.get(i)[0]);
+                System.out.println(j + " " + i + " " + d + " backtracking" + (l - dist) / rule_cte);
+                if (Math.abs(d - (l - dist) / rule_cte) < 10) {
+                    System.out.println("siguiente");
+                    candidates.add(frets_copy.get(j));
+                    checkFret(j, l, d + dist, frets_copy,candidates);
+                    cont = false;
+                } else {
+                    System.out.println("elimina" + j);
+                    frets_copy.remove(j);
+                }
+            }
+        }
     }
 
     /**
