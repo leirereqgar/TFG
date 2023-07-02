@@ -324,6 +324,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     private void findMarker() {
         Imgproc.cvtColor(src, hsv, Imgproc.COLOR_BGR2HSV);
         Core.inRange(hsv, low_limit, high_limit, yellow_img);
+        //Imgproc.Canny(yellow_img, yellow_img, 0,100);
         List<MatOfPoint> contours = new ArrayList<>();
         Imgproc.findContours(yellow_img, contours, new Mat(), Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
 
@@ -359,6 +360,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      * 7.- Se ordenan todas las lineas de forma ascendente
      */
     private final double rule_cte = 17.817;
+    private Double scale_length = null;
     private void detectParallelLines() {
         //Calcular el angulo del lado del marcador
         double alfa = calcAngle(marker.x+ marker.width, marker.y,
@@ -377,8 +379,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         for (int i = 0; i < lines.rows(); i++) {
             double rho = lines.get(i, 0)[0],
                     theta = lines.get(i, 0)[1];
-            double a = Math.cos(theta), b = Math.sin(theta);
-            double x0 = a*rho, y0 = b*rho;
+            double x0 = Math.cos(theta) * rho;
 
             // Solo añadir la linea a los trastes si es paralela al marcador
             if (compareAngles(alfa, theta)){
@@ -395,37 +396,15 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 }
 
                 if (add) {
-                    frets.add(new double[]{x0, y0, a, b});
+                    frets.add(new double[]{x0, marker.y});
                 }
             }
         }
 
         frets.sort(Comparator.comparingDouble(d -> d[0]));
 
-        double scale_length = 65;
-
         checkFrets();
-
-        //DEBUG
-        //System.out.println("marcador:" + (marker.x+marker.width));
-//        for (int i = 0; i < frets.size(); i++) {
-//            System.out.println(frets.get(i)[0]);
-//        }
-
-//        System.out.println("aaaaaa");
-//        for (int i = 0; i < frets.size(); i++) {
-////            System.out.println((marker.x + marker.width) + "  "+ frets.get(i)[0] + "  " + Double.compare(marker.x + marker.width, frets.get(i)[0]));
-//            if((Double.compare(marker.x + marker.width, frets.get(i)[0]) > 0)) {
-////                System.out.println(frets.get(i)[0]);
-//                frets.remove(i);
-//            }
-//        }
-
-        //DEBUG
-//        System.out.println("despues eliminar");
-//        for (int i = 0; i < frets.size(); i++) {
-//            System.out.println(frets.get(i)[0]);
-//        }
+        calcFrets();
     }
 
     /**
@@ -450,7 +429,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         while (i < size) {
             frets_copy =  new ArrayList<>(frets);
             double d = Math.abs(frets.get(i)[0] - frets.get(0)[0]);
-            System.out.println(i + " " + (i-1)+ " " + d + "");
+            //System.out.println(i + " " + (i-1)+ " " + d + "");
             double l = d * rule_cte;
             checkFret(i,l,d,frets_copy,candidates);
 
@@ -469,10 +448,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
         if(candidates.size() > 2) {
             frets = candidates;
+            scale_length = (frets.get(1)[0] - frets.get(0)[0]) * rule_cte;
             System.out.println("cambio");
         }
         else {
             frets.clear();
+            frets.add(candidates.get(0));
         }
     }
     private void checkFret(int i, double l, double dist,ArrayList<double[]> frets_copy, ArrayList<double[]> candidates) {
@@ -481,8 +462,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         if (j != (frets_copy.size()-1)){
             while (j < frets_copy.size() && cont) {
                 double d = Math.abs(frets_copy.get(j)[0] - frets_copy.get(i)[0]);
-                System.out.println(j + " " + i + " " + d + " backtracking" + (l - dist) / rule_cte);
-                if (Math.abs(d - (l - dist) / rule_cte) < 10) {
+                //System.out.println(j + " " + i + " " + d + " backtracking " + (l - dist) / rule_cte);
+                if (Math.abs(d - (l - dist) / rule_cte) < 5) {
                     System.out.println("siguiente");
                     candidates.add(frets_copy.get(j));
                     checkFret(j, l, d + dist, frets_copy,candidates);
@@ -491,6 +472,38 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                     System.out.println("elimina" + j);
                     frets_copy.remove(j);
                 }
+            }
+        }
+    }
+
+    private final int min_frets = 6;
+    private void calcFrets() {
+        double actual_lenght, diff, x;
+
+        if(scale_length == null){
+            scale_length = 25.5 * getResources().getDisplayMetrics().densityDpi;
+            actual_lenght = scale_length;
+            for (int i = 1; i < min_frets; i++) {
+                diff = actual_lenght/rule_cte;
+                actual_lenght -= diff;
+                x = diff + frets.get(i-1)[0];
+
+                frets.add(new double[]{x, marker.y});
+            }
+
+        } else if (frets.size() < 6) {
+            actual_lenght = scale_length;
+
+            for (int i = 1; i < frets.size(); i++) {
+                actual_lenght -= frets.get(i)[0] - frets.get(i-1)[0];
+            }
+
+            for (int i = frets.size()-1; i < min_frets; i++) {
+                diff = actual_lenght/rule_cte;
+                actual_lenght-=diff;
+                x = diff + frets.get(i)[0];
+
+                frets.add(new double[] {x, marker.y});
             }
         }
     }
