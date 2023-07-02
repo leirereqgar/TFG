@@ -22,6 +22,7 @@ import com.example.GuitAR.services.ChordRecognitionService.ChordRecognitionBinde
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.JavaCameraView;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
@@ -58,7 +59,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     // Limites superior e inferior del color amarillo en el espacio hsv
     Scalar high_limit, low_limit;
     MatOfPoint2f approx_curve;
-    double min_area = 300;
+    double min_area = 1000;
 
     Timer cronometro;
 
@@ -100,7 +101,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lesson);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         extras = getIntent().getExtras();
         lesson_name = extras.getString("lesson");
@@ -141,15 +142,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         colors.add(new Scalar(249, 119, 166));// Pink 3
         colors.add(new Scalar(254, 249, 255));// White 4
 
-        camera_bridge_view = findViewById(R.id.cameraViewer);
-        camera_bridge_view.setMaxFrameSize(getResources().getDisplayMetrics().widthPixels,getResources().getDisplayMetrics().heightPixels);
+        camera_bridge_view = (JavaCameraView) findViewById(R.id.cameraViewer);
         camera_bridge_view.setVisibility(SurfaceView.VISIBLE);
-        //DisplayMetrics metrics = getResources().getDisplayMetrics();
         //Descomentar para camara frontal
-        camera_bridge_view.setCameraIndex(0); //DEBUG
+        camera_bridge_view.setMaxFrameSize(getResources().getDisplayMetrics().widthPixels,getResources().getDisplayMetrics().heightPixels);
+        camera_bridge_view.setCameraIndex(1);
         camera_bridge_view.setCvCameraViewListener(this);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); //Mantener pantalla encendida para que no entre en suspension
-
         //Crear listener para la camara
         base_loader_callback = new BaseLoaderCallback(this) {
             @Override
@@ -203,7 +201,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     public void onStop() {
         super.onStop();
         //Desasociar el servicio para evitar errores en un futuro
-        service.stopProcessing();
         Intent service_intent = new Intent(this, ChordRecognitionService.class);
         stopService(service_intent);
         unbindService(connection);
@@ -256,13 +253,14 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         chord = service.getChord();
+        System.out.println(chord_name);
         translateChord();
 
         // Obtener frame en color, se usara dentro de las funciones
         src  = inputFrame.rgba();
-        gray = inputFrame.rgba();
+        gray = inputFrame.rgba().clone();
         // Voltear la imagen en el eje y para que actue como un espejo
-        //Core.flip(src, src, 1);
+        Core.flip(src, src, 1);
 
         printActualChordInfo();
 
@@ -291,7 +289,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             SharedPreferences.Editor editor = sh.edit();
             editor.putString(lesson_name, "completed");
             editor.apply();
-            service.stopProcessing();
 
             Intent change = new Intent(this, LessonSelectionScreen.class);
             startActivity(change);
@@ -324,7 +321,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     private void findMarker() {
         Imgproc.cvtColor(src, hsv, Imgproc.COLOR_BGR2HSV);
         Core.inRange(hsv, low_limit, high_limit, yellow_img);
-        //Imgproc.Canny(yellow_img, yellow_img, 0,100);
+//        Imgproc.GaussianBlur(yellow_img, yellow_img, new Size(7,7),0,0);
         List<MatOfPoint> contours = new ArrayList<>();
         Imgproc.findContours(yellow_img, contours, new Mat(), Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
 
@@ -334,7 +331,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             int n_vertices = (int) approx_curve.total();
             double area = Imgproc.contourArea(contour);
 
-            if(Math.abs(area) >= min_area && n_vertices == 4) {
+            if(Math.abs(area) >= 1000  && n_vertices == 4) {
                 marker = Imgproc.boundingRect(contour);
                 marker_found = true;
                 // DEBUG
@@ -375,7 +372,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
         frets = new ArrayList<>();
         frets.add(new double[]{marker.x+ marker.width, marker.y});
-        //System.out.println("Marcador" + (rectangle.x));
         for (int i = 0; i < lines.rows(); i++) {
             double rho = lines.get(i, 0)[0],
                     theta = lines.get(i, 0)[1];
@@ -446,7 +442,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             }
         }
 
-        if(candidates.size() > 2) {
+        if(candidates.size() >= 2) {
             frets = candidates;
             scale_length = (frets.get(1)[0] - frets.get(0)[0]) * rule_cte;
             System.out.println("cambio");
@@ -481,7 +477,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         double actual_lenght, diff, x;
 
         if(scale_length == null){
-            scale_length = 25.5 * getResources().getDisplayMetrics().densityDpi;
+            scale_length = 25.5 * getResources().getDisplayMetrics().densityDpi/(16/9);
             actual_lenght = scale_length;
             for (int i = 1; i < min_frets; i++) {
                 diff = actual_lenght/rule_cte;
@@ -572,7 +568,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             } else {
                 Imgproc.circle(src,
                         new Point(x,
-                                (marker.y + marker.height) - interval * (n.getString())),
+                                (marker.y + marker.height +5) - interval * (n.getString())),
                         20, c, -1);
             }
         }

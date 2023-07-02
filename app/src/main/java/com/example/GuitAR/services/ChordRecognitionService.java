@@ -22,11 +22,19 @@ public class ChordRecognitionService extends Service {
     double [] audio_samples_buffer_window;
     double [] audio_spectrum_buffer;
     boolean keep_recording = false;
+    private AudioRecord r;
 
     @Override
     public void onCreate() {
         chord[0] = -1;
         chord[1] = -1;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        r.stop();
+        r.release();
     }
 
     public int [] getChord() {
@@ -56,33 +64,27 @@ public class ChordRecognitionService extends Service {
         return super.onStartCommand(i, flags, ID);
     }
 
+    @SuppressLint("MissingPermission")
     public void process() {
         short[] temp_samples = new short[BUFFER_SIZE];
-        @SuppressLint("MissingPermission")
-        AudioRecord r = new AudioRecord(MediaRecorder.AudioSource.DEFAULT,
-                                44100,
-                                AudioFormat.CHANNEL_IN_MONO,
-                                AudioFormat.ENCODING_DEFAULT,
-                                BUFFER_SIZE);
+        int n_read;
+        r = new AudioRecord(MediaRecorder.AudioSource.DEFAULT,
+                44100,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_DEFAULT,
+                BUFFER_SIZE);
         r.startRecording();
         keep_recording = true;
         while(keep_recording) {
+            r.read(temp_samples, 0, temp_samples.length);
             audio_samples_buffer = getSamplesToDouble(temp_samples);
             audio_samples_buffer_window = window(audio_samples_buffer);
             audio_spectrum_buffer = bandPassFilter(
                     fft(audio_samples_buffer_window, true),
                     55, 4000,44100,8192);
             chord = chordDetection(audio_samples_buffer_window,
-                                    audio_spectrum_buffer);
+                    audio_spectrum_buffer);
         }
-
-        r.stop();
-        r.release();
-        r = null;
-    }
-
-    public void stopProcessing() {
-        keep_recording = false;
     }
 
     private static double[] getSamplesToDouble(short[] inputBuffer) {
