@@ -42,7 +42,7 @@ public class Major extends Lesson{
 //        chords.add(f_major);
 
         Chord g_major = new Chord(NoteNameEnum.G, ChordTypeEnum.Major);
-        g_major.add(new Note(2,2));
+        g_major.add(new Note(5,2));
         g_major.add(new Note(6,3));
         g_major.add(new Note(1,3));
         chords.add(g_major);
