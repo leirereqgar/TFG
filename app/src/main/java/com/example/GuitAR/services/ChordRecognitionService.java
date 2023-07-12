@@ -55,8 +55,11 @@ public class ChordRecognitionService extends Service {
                 new Runnable() {
                     @Override
                     public void run() {
-                        process();
-
+                        try {
+                            process();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
         ).start();
@@ -65,7 +68,7 @@ public class ChordRecognitionService extends Service {
     }
 
     @SuppressLint("MissingPermission")
-    public void process() {
+    public void process() throws InterruptedException {
         short[] temp_samples = new short[BUFFER_SIZE];
         int n_read;
         r = new AudioRecord(MediaRecorder.AudioSource.DEFAULT,
@@ -84,6 +87,8 @@ public class ChordRecognitionService extends Service {
                     55, 4000,44100,8192);
             chord = chordDetection(audio_samples_buffer_window,
                     audio_spectrum_buffer);
+
+            Thread.sleep(100);
         }
     }
 
