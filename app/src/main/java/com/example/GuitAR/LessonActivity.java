@@ -7,6 +7,7 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -52,7 +53,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     Scalar high_limit, low_limit; // Limites superior e inferior del color amarillo en el espacio hsv
     MatOfPoint2f approx_curve;
     private final int min_frets = 8, n_strings = 6;
-    ArrayList<double[]> frets, strings; // Array para los trastes y las cuerdas
+    ArrayList<double[]> frets, strings = new ArrayList<>(); // Array para los trastes y las cuerdas
 
     ///////////////////////////////////////////////////////////////////
     // TIMERS PARA EJECUTAR LAS DETECCIONES
@@ -195,6 +196,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 10);
         }
 
+        for (int i = 0; i < strings.size(); i++) {
+            Point pt1 = new Point(Math.round(strings.get(i)[0] + 1000*(-strings.get(i)[3])), Math.round(strings.get(i)[1] + 1000*(strings.get(i)[2])));
+            Point pt2 = new Point(Math.round(strings.get(i)[0] - 1000*(-strings.get(i)[3])), Math.round(strings.get(i)[1] - 1000*(strings.get(i)[2])));
+            Imgproc.line(src, pt1, pt2, new Scalar(0,0,255), 10);
+        }
+
         /**
          * buscar el mastil si esse pierde en las proximidades de donde estaba.
          *
@@ -284,8 +291,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      */
     private void detectParallelLines() {
         //Calcular el angulo del lado del marcador
-        double marker_slope = calcSlope(marker.x+ marker.width, marker.y,
-                                marker.x + marker.width, marker.y + marker.height);
+        double marker_slope = calcSlope(marker.x, marker.y,
+                                marker.x + marker.width, marker.y);
 
         dst = new Mat();
         Imgproc.cvtColor(gray, gray, Imgproc.COLOR_BGR2GRAY);
@@ -294,15 +301,17 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         Imgproc.dilate(dst, dst, kernel);
         Imgproc.HoughLines(dst, lines, 1, Math.PI/180, 150);
 
-        ArrayList<double[]> possible_frets = new ArrayList<>();
+        ArrayList<double[]> possible_frets = new ArrayList<>(), possible_strings = new ArrayList<>();
         possible_frets.add(new double[]{marker.x+ marker.width, marker.y,0,0});
         for (int i = 0; i < lines.rows(); i++) {
             double rho = lines.get(i, 0)[0],
                     theta = lines.get(i, 0)[1];
-            double x0 = Math.cos(theta) * rho, y0 = Math.sin(theta)*rho;
-
+            double a = Math.cos(theta), b = Math.sin(theta);
+            double x0 = a * rho, y0 = b*rho;
+            double line_slope = calcSlope(Math.round(x0 + 1000*(-b)), Math.round(y0 + 1000*(a)),
+                                          Math.round(x0 - 1000*(-b)), Math.round(y0 - 1000*(a)));
             // Solo añadir la linea a los trastes si es paralela al marcador
-            if (areParallel(Math.atan(marker_slope), theta)){
+            if (arePerpendicular(marker_slope, line_slope)){
                 // Comprobar si hay otra linea demasiado cerca, tiene coordenadas negativas o
                 // esta a la "izquierda" del marcador, si no estamos en ninguno de estos casos
                 // se aniade
@@ -319,16 +328,31 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                     possible_frets.add(new double[]{x0, y0, Math.cos(theta), Math.sin(theta)});
                 }
             }
+            else if(areParallel(marker_slope,line_slope)) {
+                // Comprobar si hay otra linea demasiado cerca, tiene coordenadas negativas o
+                // esta a la "izquierda" del marcador, si no estamos en ninguno de estos casos
+                // se aniade
+                boolean add = true;
+                for (int j = 0; j < possible_frets.size() && add; j++) {
+                    if (Math.abs(possible_frets.get(j)[1] - y0) < 5
+                        || y0 < marker.y || y0 > marker.y + marker.height) {
+                        add = false;
+                    }
+                }
+
+                if (add) {
+                    possible_strings.add(new double[]{x0, y0, Math.cos(theta), Math.sin(theta)});
+                }
+            }
         }
+        strings = possible_strings;
 
         possible_frets.sort(Comparator.comparingDouble(d -> d[0]));
-
         double variation = 0;
         if(!frets.isEmpty())
             variation = Math.abs(frets.get(1)[0] - possible_frets.get(1)[0]);
         if(frets.isEmpty() || variation >= 100) {
             checkFrets(possible_frets);
-            System.out.println("hols");
         }
     }
 
@@ -459,12 +483,11 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      * @return       : true si son iguales, false si no
      */
     private boolean areParallel(double p1, double p2) {
-        return Math.abs(p1-p2) <= 1.5;
+        return Math.abs(p1-p2) <= 0.01;
     }
 
-    private boolean arePerpendicular(double a, double b){
-        double inverso_b = -1/b;
-        return (a-0.5) <= inverso_b && inverso_b <= (a+0.5);
+    private boolean arePerpendicular(double m1, double m2){
+        return Math.abs(m1-1/m2) <= 0.1;
     }
 
     ///////////////////////////////////////////////////////////////////
