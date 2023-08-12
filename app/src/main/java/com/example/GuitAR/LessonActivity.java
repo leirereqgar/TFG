@@ -22,7 +22,6 @@ import com.example.GuitAR.services.ChordRecognitionService.ChordRecognitionBinde
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.JavaCameraView;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
@@ -168,9 +167,10 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
     /**
      * onCameraFrame : en cada frame se localiza el marcador y se dibujan los elementos necesarios
-     * @param inputFrame
+     * @param inputFrame : frame recibido desde la camara
      * @return frame con todos los elementos dibujados
      */
+    static boolean first_frame = true;
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         chord = service.getChord();
@@ -181,7 +181,15 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         src  = inputFrame.rgba().clone();
         gray = inputFrame.rgba().clone();
         // Voltear la imagen en el eje y para que actue como un espejo
-        //Core.flip(src, src, 1);
+        Core.flip(src, src, 1);
+
+        if(first_frame) {
+            first_frame = false;
+            
+            calibrate(inputFrame.gray());
+
+            return src;
+        }
 
         printActualChordInfo();
 
@@ -191,22 +199,18 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
         Imgproc.circle(src, new Point(marker.x, marker.y),20, new Scalar(255,0,0),-1);
         for (int i = 0; i < frets.size(); i++) {
-            Point pt1 = new Point(Math.round(frets.get(i)[0] + 1000*(-frets.get(i)[3])), Math.round(frets.get(i)[1] + 1000*(frets.get(i)[2])));
-            Point pt2 = new Point(Math.round(frets.get(i)[0] - 1000*(-frets.get(i)[3])), Math.round(frets.get(i)[1] - 1000*(frets.get(i)[2])));
-            Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 10);
+//            Point pt1 = new Point(Math.round(frets.get(i)[0] + 1000*(-frets.get(i)[3])), Math.round(frets.get(i)[1] + 1000*(frets.get(i)[2])));
+//            Point pt2 = new Point(Math.round(frets.get(i)[0] - 1000*(-frets.get(i)[3])), Math.round(frets.get(i)[1] - 1000*(frets.get(i)[2])));
+//            Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 10);
+            Point pt = new Point(frets.get(i)[0], frets.get(0)[1]);
+            Imgproc.circle(src, pt, 20,new Scalar(0,255,0), -1);
         }
 
-        for (int i = 0; i < strings.size(); i++) {
-            Point pt1 = new Point(Math.round(strings.get(i)[0] + 1000*(-strings.get(i)[3])), Math.round(strings.get(i)[1] + 1000*(strings.get(i)[2])));
-            Point pt2 = new Point(Math.round(strings.get(i)[0] - 1000*(-strings.get(i)[3])), Math.round(strings.get(i)[1] - 1000*(strings.get(i)[2])));
-            Imgproc.line(src, pt1, pt2, new Scalar(0,0,255), 10);
-        }
-
-        /**
-         * buscar el mastil si esse pierde en las proximidades de donde estaba.
-         *
-         */
-
+//        for (int i = 0; i < strings.size(); i++) {
+//            Point pt1 = new Point(Math.round(strings.get(i)[0] + 1000*(-strings.get(i)[3])), Math.round(strings.get(i)[1] + 1000*(strings.get(i)[2])));
+//            Point pt2 = new Point(Math.round(strings.get(i)[0] - 1000*(-strings.get(i)[3])), Math.round(strings.get(i)[1] - 1000*(strings.get(i)[2])));
+//            Imgproc.line(src, pt1, pt2, new Scalar(0,0,255), 10);
+//        }
 
         if(marker_found &&
            frets.size() > info.getChord(index).numFrets() &&
@@ -233,6 +237,31 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     ///////////////////////////////////////////////////////////////////
     // METODOS PARA PROCESADO DE LA IMAGEN
     ///////////////////////////////////////////////////////////////////
+    private int th_lower, th_hihger;
+    private void calibrate(Mat gray) {
+        int lower = 0, higher = 255;
+        int min_lower = lower, max_higher = higher;
+        int i = 2;
+        int max_lines = 0;
+
+        while (higher > lower) {
+            int l = countLines(gray, lower, higher);
+
+            if(l > max_lines) {
+                max_lines = l;
+                min_lower = lower;
+                max_higher = higher;
+            }
+            higher -= i;
+            lower  += i;
+            i *= i;
+        }
+
+        th_lower = min_lower;
+        th_hihger = max_higher;
+        Log.i("th", "lower: " + th_lower + "  higher " + th_hihger);
+    }
+
     /**
      * findMarker : encuentra el marcador donde inicia el mastil
      * Primero se cambia del espacio de color BGR al HSV y se queda solo con los pixeles
@@ -250,7 +279,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         Imgproc.Canny(yellow_img, yellow_img, 10, 100);
         Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size((2*2) + 1, (2*2)+1));
         Imgproc.dilate(yellow_img, yellow_img, kernel);
-        Rect min = new Rect(new double[]{0,0,yellow_img.cols()/2,yellow_img.rows()});
+        Rect min = new Rect(new double[]{0,0,yellow_img.cols()/2d,yellow_img.rows()});
         List<MatOfPoint> contours = new ArrayList<>();
         Imgproc.findContours(yellow_img.submat(min), contours, new Mat(), Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
         //marker_found = false;
@@ -272,8 +301,21 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         }
     }
 
+    public int countLines(Mat gray, int l, int h) {
+        //Calcular el angulo del lado del marcador
+        double marker_slope = calcSlope(marker.x, marker.y,
+                marker.x + marker.width, marker.y);
+
+        dst = new Mat();
+        Imgproc.Canny(gray, dst, l, h, 3);
+        Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size((2*2) + 1, (2*2)+1));
+        Imgproc.dilate(dst, dst, kernel);
+        Imgproc.HoughLines(dst, lines, 1, Math.PI/180, 150);
+
+        return lines.rows();
+    }
+
     private final double rule_cte = 17.817;
-    private final double grad2rad = Math.PI/180;
     private Double scale_length = null;
     /**
      * detectParallelLines : detecta las lineas que corresponden a los trastes
@@ -301,7 +343,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         Imgproc.dilate(dst, dst, kernel);
         Imgproc.HoughLines(dst, lines, 1, Math.PI/180, 150);
 
-        ArrayList<double[]> possible_frets = new ArrayList<>(), possible_strings = new ArrayList<>();
+        ArrayList<double[]> possible_frets = new ArrayList<>();
+        ArrayList<double[]> possible_strings = new ArrayList<>();
         possible_frets.add(new double[]{marker.x+ marker.width, marker.y,0,0});
         for (int i = 0; i < lines.rows(); i++) {
             double rho = lines.get(i, 0)[0],
@@ -317,7 +360,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 // se aniade
                 boolean add = true;
                 for (int j = 0; j < possible_frets.size() && add; j++) {
-                    if (Math.abs(possible_frets.get(j)[0] - x0) < 50 || x0 < 0
+                    if (Math.abs(possible_frets.get(j)[0] - x0) < 150 || x0 < 0
                             || Double.compare(marker.x + marker.width, x0) > 0) {
                         //System.out.println(x0);
                         add = false;
@@ -325,27 +368,24 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 }
 
                 if (add) {
-                    possible_frets.add(new double[]{x0, y0, Math.cos(theta), Math.sin(theta)});
+                    possible_frets.add(new double[]{x0, y0, a, b});
                 }
             }
             else if(areParallel(marker_slope,line_slope)) {
-                // Comprobar si hay otra linea demasiado cerca, tiene coordenadas negativas o
-                // esta a la "izquierda" del marcador, si no estamos en ninguno de estos casos
-                // se aniade
                 boolean add = true;
-                for (int j = 0; j < possible_frets.size() && add; j++) {
-                    if (Math.abs(possible_frets.get(j)[1] - y0) < 5
+                for (int j = 0; j < possible_strings.size() && add; j++) {
+                    if (Math.abs(possible_strings.get(j)[1] - y0) < 10
                         || y0 < marker.y || y0 > marker.y + marker.height) {
                         add = false;
+                        possible_strings.get(j)[4]++;
                     }
                 }
 
                 if (add) {
-                    possible_strings.add(new double[]{x0, y0, Math.cos(theta), Math.sin(theta)});
+                    possible_strings.add(new double[]{x0, y0, a, b, 1});
                 }
             }
         }
-        strings = possible_strings;
 
         possible_frets.sort(Comparator.comparingDouble(d -> d[0]));
         double variation = 0;
@@ -353,7 +393,27 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             variation = Math.abs(frets.get(1)[0] - possible_frets.get(1)[0]);
         if(frets.isEmpty() || variation >= 100) {
             checkFrets(possible_frets);
+            frets = possible_frets;
         }
+
+//        possible_strings.add(new double[]{0, 0, 0, 0});
+//        possible_strings.add(new double[]{0, 6, 0, 0});
+//        possible_strings.add(new double[]{0, 12, 0, 0});
+//        possible_strings.add(new double[]{0, 18, 0, 0});
+//        possible_strings.add(new double[]{0, 20, 0, 0});
+//        possible_strings.add(new double[]{0, 22, 0, 0});
+//        possible_strings.add(new double[]{0, 30, 0, 0});
+//        possible_strings.add(new double[]{0, 36, 0, 0});
+//        for (int i = 0; i <possible_strings.size(); i++) {
+//            Log.i("prueba", possible_strings.get(i)[1]+"");
+//        }
+        possible_strings.sort(Comparator.comparingDouble(d -> d[1]));
+        //possible_strings = checkStrings(possible_strings);
+//
+        for (int i = 0; i <possible_strings.size(); i++) {
+            Log.i("prueba", possible_strings.get(i)[1]+"");
+        }
+        strings = possible_strings;
     }
 
     private void checkFrets(ArrayList<double[]> possible_frets) {
@@ -447,18 +507,52 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         }
     }
 
-    private void checkStrings(ArrayList<double []> s) {
-        int size = s.size();
-        ArrayList<double[]> s_copy = new ArrayList<>(s);
-        ArrayList<double[]> candidates = new ArrayList<>();
-        candidates.add(s.get(0));
-        candidates.add(s.get(1));
-        int i = 1;
-        while(i < size) {
-            double d = Math.abs(s_copy.get(i)[1] - s_copy.get(i-1)[1]);
-            double d1 = Math.abs(s_copy.get(i+1)[1] - s_copy.get(i)[1]);
+    private ArrayList<double[]> checkStrings(ArrayList<double []> possible_strings) {
+        int size = possible_strings.size();
+        ArrayList<double[]> copy;
+        ArrayList<double[]> candidates= new ArrayList<>();
+        ArrayList<double[]> result= new ArrayList<>();
+        Log.i("hola", possible_strings.size()+"");
 
+        candidates.add(possible_strings.get(0));
+        candidates.add(possible_strings.get(1));
+        int i = 1, max = 2;
+        while (i < size && max !=6) {
+            copy  = new ArrayList<>(possible_strings);
+            double d = Math.abs(possible_strings.get(i)[1] - possible_strings.get(0)[1]);
+            Log.i("distancia", d+"");
+            checkString(i,d,copy,candidates);
+
+            copy.remove(i);
             size--;
+
+            if(candidates.size() >= max){
+                max = candidates.size();
+                result = new ArrayList<>(candidates);
+                candidates.clear();
+                //Log.i("prueba", max+"");
+            }
+        }
+        return result;
+    }
+
+    private void checkString(int i, double dist,ArrayList<double[]> copy, ArrayList<double[]> candidates) {
+        int j = i+1;
+        boolean cont = true;
+        if (j != (copy.size()-1)){
+            while (j < copy.size() && cont) {
+                double d = Math.abs(copy.get(j)[1] - copy.get(i)[1]);
+                Log.i("hola", d+"" + (Math.abs(d - dist) < 0.5));
+                //System.out.println(j + " " + i + " " + d + " backtracking " + (l - dist) / rule_cte);
+                if (Math.abs(d - dist) < 0.5) {
+                    candidates.add(copy.get(j));
+                    Log.i("cuerdas", candidates.size()+"aaa");
+                    checkString(j, dist, copy, candidates);
+                    cont = false;
+                } else {
+                    j++;
+                }
+            }
         }
     }
 
@@ -471,9 +565,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      * @return   : angulo de la recta en radianes
      */
     private double calcSlope(double x1, double y1, double x2, double y2) {
-        double pendiente = (y2 - y1) / (x2 - x1);
-
-        return pendiente;
+        return (y2 - y1) / (x2 - x1);
     }
 
     /**
@@ -541,7 +633,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         camera_bridge_view.setVisibility(SurfaceView.VISIBLE);
         //Descomentar para camara frontal
         //camera_bridge_view.setMaxFrameSize(getResources().getDisplayMetrics().widthPixels,getResources().getDisplayMetrics().heightPixels);
-        //camera_bridge_view.setCameraIndex(1);
+        camera_bridge_view.setCameraIndex(1);
         camera_bridge_view.setCvCameraViewListener(this);
         base_loader_callback = new BaseLoaderCallback(this) {
             @Override
