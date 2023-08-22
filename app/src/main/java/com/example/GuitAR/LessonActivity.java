@@ -67,6 +67,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     ChordTypeEnum chord_type = ChordTypeEnum.NoChord;
     int [] chord             = new int [2];
     ArrayList<Scalar> colors;
+    Scalar black = new Scalar(35,28,35);
+    Scalar white = new Scalar(254,249,255);
+    Scalar orange = new Scalar(246,160,8);
     private Lesson info; // Donde se encuentran los datos de la leccion
     Bundle extras; // Recoger datos pasados de la actividad anterior
     String lesson_name;
@@ -197,13 +200,16 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 //            findMarker();
 //        } catch (Exception e) {}
 
-        Imgproc.circle(src, new Point(marker.x, marker.y),20, new Scalar(255,0,0),-1);
+        //Imgproc.circle(src, new Point(marker.x, marker.y),20, new Scalar(255,0,0),-1);
+        Imgproc.ellipse(src, new Point(marker.x, marker.y), new Size(10,30),0,0,360,orange,20);
         for (int i = 0; i < frets.size(); i++) {
 //            Point pt1 = new Point(Math.round(frets.get(i)[0] + 1000*(-frets.get(i)[3])), Math.round(frets.get(i)[1] + 1000*(frets.get(i)[2])));
 //            Point pt2 = new Point(Math.round(frets.get(i)[0] - 1000*(-frets.get(i)[3])), Math.round(frets.get(i)[1] - 1000*(frets.get(i)[2])));
 //            Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 10);
             Point pt = new Point(frets.get(i)[0], frets.get(0)[1]);
-            Imgproc.circle(src, pt, 20,new Scalar(0,255,0), -1);
+            //Imgproc.circle(src, pt, 20,new Scalar(0,255,0), -1);
+            Imgproc.ellipse(src, pt, new Size(10,30),0,0,360,orange,20);
+            Imgproc.putText(src, i+1+"", pt, 0,1,white, 4);
         }
 
 //        for (int i = 0; i < strings.size(); i++) {
@@ -318,7 +324,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     private final double rule_cte = 17.817;
     private Double scale_length = null;
     /**
-     * detectParallelLines : detecta las lineas que corresponden a los trastes
+     * detectLines : detecta las lineas que corresponden a los trastes
      * 1.- se calcula el angulo que tiene el lado del marcador.
      * 2.- Se inicializa donde se guardara el resultado
      * 3.- Se transforma el frame original (src) a banco y negro
@@ -331,7 +337,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      *      - Tiene coordenada x negativa
      * 7.- Se ordenan todas las lineas de forma ascendente
      */
-    private void detectParallelLines() {
+    private void detectLines() {
         //Calcular el angulo del lado del marcador
         double marker_slope = calcSlope(marker.x, marker.y,
                                 marker.x + marker.width, marker.y);
@@ -396,24 +402,24 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             frets = possible_frets;
         }
 
-//        possible_strings.add(new double[]{0, 0, 0, 0});
-//        possible_strings.add(new double[]{0, 6, 0, 0});
-//        possible_strings.add(new double[]{0, 12, 0, 0});
-//        possible_strings.add(new double[]{0, 18, 0, 0});
-//        possible_strings.add(new double[]{0, 20, 0, 0});
-//        possible_strings.add(new double[]{0, 22, 0, 0});
-//        possible_strings.add(new double[]{0, 30, 0, 0});
-//        possible_strings.add(new double[]{0, 36, 0, 0});
 //        for (int i = 0; i <possible_strings.size(); i++) {
 //            Log.i("prueba", possible_strings.get(i)[1]+"");
 //        }
         possible_strings.sort(Comparator.comparingDouble(d -> d[1]));
-        //possible_strings = checkStrings(possible_strings);
+        possible_strings.remove(0);
+        checkStrings(possible_strings);
 //
-        for (int i = 0; i <possible_strings.size(); i++) {
-            Log.i("prueba", possible_strings.get(i)[1]+"");
+//        for (int i = 0; i <possible_strings.size(); i++) {
+//            Log.i("prueba", possible_strings.get(i)[1]+"");
+//        }
+
+        variation = 0;
+        if(!strings.isEmpty())
+            variation = Math.abs(strings.get(1)[1] - possible_strings.get(1)[1]);
+        if(strings.isEmpty() || variation >= 100) {
+            checkStrings(possible_strings);
+            strings = possible_strings;
         }
-        strings = possible_strings;
     }
 
     private void checkFrets(ArrayList<double[]> possible_frets) {
@@ -446,7 +452,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         if(candidates.size() >= 2) {
             possible_frets = candidates;
             scale_length = (possible_frets.get(1)[0] - possible_frets.get(0)[0]) * rule_cte;
-            System.out.println("cambio");
+            //System.out.println("cambio");
         }
         else {
             possible_frets.clear();
@@ -463,12 +469,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 double d = Math.abs(frets_copy.get(j)[0] - frets_copy.get(i)[0]);
                 //System.out.println(j + " " + i + " " + d + " backtracking " + (l - dist) / rule_cte);
                 if (Math.abs(d - (l - dist) / rule_cte) < 5) {
-                    System.out.println("siguiente");
+                    //System.out.println("siguiente");
                     candidates.add(frets_copy.get(j));
                     checkFret(j, l, d + dist, frets_copy,candidates);
                     cont = false;
                 } else {
-                    System.out.println("elimina" + j);
+                    //System.out.println("elimina" + j);
                     frets_copy.remove(j);
                 }
             }
@@ -507,55 +513,70 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         }
     }
 
-    private ArrayList<double[]> checkStrings(ArrayList<double []> possible_strings) {
+    private void checkStrings(ArrayList<double[]> possible_strings) {
         int size = possible_strings.size();
-        ArrayList<double[]> copy;
+        ArrayList<double[]> strings_copy;
         ArrayList<double[]> candidates= new ArrayList<>();
-        ArrayList<double[]> result= new ArrayList<>();
-        Log.i("hola", possible_strings.size()+"");
-
         candidates.add(possible_strings.get(0));
         candidates.add(possible_strings.get(1));
         int i = 1, max = 2;
-        while (i < size && max !=6) {
-            copy  = new ArrayList<>(possible_strings);
+        while (i < size) {
+            strings_copy =  new ArrayList<>(possible_strings);
             double d = Math.abs(possible_strings.get(i)[1] - possible_strings.get(0)[1]);
-            Log.i("distancia", d+"");
-            checkString(i,d,copy,candidates);
+            System.out.println(i + " " + (i-1)+ " " + d + "");
+            checkString(i,d,strings_copy,candidates);
 
-            copy.remove(i);
+            strings_copy.remove(i);
             size--;
 
-            if(candidates.size() >= max){
+            if(candidates.size() >= max && max < 6){
                 max = candidates.size();
-                result = new ArrayList<>(candidates);
+            }
+            else {
                 candidates.clear();
-                //Log.i("prueba", max+"");
+                candidates.add(strings_copy.get(0));
+                candidates.add(strings_copy.get(i));
             }
         }
-        return result;
-    }
 
-    private void checkString(int i, double dist,ArrayList<double[]> copy, ArrayList<double[]> candidates) {
+        if(candidates.size() >= 2) {
+            possible_strings = candidates;
+        }
+        else {
+            possible_strings.clear();
+            possible_strings.add(candidates.get(0));
+        }
+
+        calcStrings(possible_strings);
+    }
+    private void checkString(int i,  double dist,ArrayList<double[]> strings_copy, ArrayList<double[]> candidates) {
         int j = i+1;
         boolean cont = true;
-        if (j != (copy.size()-1)){
-            while (j < copy.size() && cont) {
-                double d = Math.abs(copy.get(j)[1] - copy.get(i)[1]);
-                Log.i("hola", d+"" + (Math.abs(d - dist) < 0.5));
+        if (j != (strings_copy.size()-1)){
+            while (j < strings_copy.size() && cont) {
+                double d = Math.abs(strings_copy.get(j)[1] - strings_copy.get(i)[1]);
                 //System.out.println(j + " " + i + " " + d + " backtracking " + (l - dist) / rule_cte);
-                if (Math.abs(d - dist) < 0.5) {
-                    candidates.add(copy.get(j));
-                    Log.i("cuerdas", candidates.size()+"aaa");
-                    checkString(j, dist, copy, candidates);
+                if (Math.abs(d - dist) < 5) {
+                    //System.out.println("siguiente");
+                    candidates.add(strings_copy.get(j));
+                    checkString(j, d, strings_copy,candidates);
                     cont = false;
                 } else {
-                    j++;
+                    //System.out.println("elimina" + j);
+                    strings_copy.remove(j);
                 }
             }
         }
     }
 
+    private void calcStrings(ArrayList<double[]> possible_strings) {
+        if(possible_strings.size() < 6) {
+            double d = possible_strings.get(1)[1] - possible_strings.get(0)[1];
+            for (int i = possible_strings.size()-1; i < 6; i++) {
+                possible_strings.add(new double[]{marker.x, possible_strings.get(i)[1] + d, possible_strings.get(i)[2], possible_strings.get(i)[3]});
+            }
+        }
+    }
     /**
      * calcSlope : calcula el angulo de la recta que forman los puntos
      * @param x1 : coordenada x del primer punto
@@ -682,7 +703,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             public void run() {
                 if(marker_found)
                     try{
-                        detectParallelLines();
+                        detectLines();
                     }catch (Exception e){}
             }
         }, 0, 1000);
@@ -720,6 +741,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     private void drawNote(Note n, Scalar c) {
         if(!frets.isEmpty()){
             double x = (frets.get(n.getFret() - 1)[0] + frets.get(n.getFret())[0]) / 2 + 10; // Calcular la posicion entre trastes
+            //double y = strings.get(6-n.getString())[1];
 
             double interval = marker.height / 6.0;
 
@@ -743,8 +765,9 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
      * y el indice para llevar la cuenta de los aciertos
      */
     private void printActualChordInfo() {
+        Imgproc.rectangle(src, new Point(0,0), new Point(500,210),black,-1);
         Imgproc.putText(src, info.getChord(index).toString(),
-                new Point(10,100), 0,4,new Scalar(0,0,0), 4);
-        Imgproc.putText(src, index+"", new Point(10,200), 0,4,new Scalar(0,0,0), 4);
+                new Point(10,100), 0,4,white, 4);
+        Imgproc.putText(src, index+"", new Point(10,200), 0,4, white,4);
     }
 }
