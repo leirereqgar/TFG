@@ -206,10 +206,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 //            Point pt1 = new Point(Math.round(frets.get(i)[0] + 1000*(-frets.get(i)[3])), Math.round(frets.get(i)[1] + 1000*(frets.get(i)[2])));
 //            Point pt2 = new Point(Math.round(frets.get(i)[0] - 1000*(-frets.get(i)[3])), Math.round(frets.get(i)[1] - 1000*(frets.get(i)[2])));
 //            Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 10);
-            Point pt = new Point(frets.get(i)[0], frets.get(0)[1]);
+            Point pt = new Point(frets.get(i)[0], frets.get(0)[1]-10);
             //Imgproc.circle(src, pt, 20,new Scalar(0,255,0), -1);
             Imgproc.ellipse(src, pt, new Size(10,30),0,0,360,orange,20);
-            Imgproc.putText(src, i+1+"", pt, 0,1,white, 4);
+            pt.x -= 10;
+            pt.y += 5;
+            Imgproc.putText(src, Integer.toString(i), pt, 0,1,white, 4);
         }
 
 //        for (int i = 0; i < strings.size(); i++) {
@@ -622,20 +624,20 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 info = new Dominant();
                 System.out.println(lesson_name);
                 break;
-            case "Progresion145 C":
-                info = new Progression145C();
+            case "Shake It Off":
+                info = new ShakeItOff();
                 System.out.println(lesson_name);
                 break;
-            case "Progresion1645 C":
-                info = new Progression1645C();
+            case "I Gotta Feelin":
+                info = new IGottaFeelin();
                 System.out.println(lesson_name);
                 break;
-            case "Progresion1514 C":
-                info = new Progression1514C();
+            case "Zombie":
+                info = new Zombie();
                 System.out.println(lesson_name);
                 break;
-            case "Progresion145 E":
-                info = new Progression145E();
+            case "Accidentaly In Love":
+                info = new AccidentalyInLove();
                 System.out.println(lesson_name);
                 break;
         }
