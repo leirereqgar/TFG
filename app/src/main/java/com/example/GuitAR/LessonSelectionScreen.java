@@ -17,21 +17,21 @@ import java.util.ArrayList;
 
 
 public class LessonSelectionScreen extends AppCompatActivity {
-    ArrayList<Pair<String, LessonName>> names;
+    ArrayList<Pair<String, LessonName>> lessons;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lessons_selection_screen);
 
-        names = new ArrayList<>();
-        names.add(new Pair<>("Clase 1\nAcordes mayores", LessonName.Major));
-        names.add(new Pair<>("Clase 2\nAcordes menores", LessonName.Minor));
-        names.add(new Pair<>("Clase 3\nAcordes de 7ª dominante", LessonName.Dominant));
-        names.add(new Pair<>("Clase 4\nProgresion I-IV-V en C", LessonName.Progression145_C));
-        names.add(new Pair<>("Clase 5\nProgresion I-VI-IV-V en C", LessonName.Progression1645_C));
-        names.add(new Pair<>("Clase 6\nProgresion I-V-I-IV en C", LessonName.Progression1514_C));
-        names.add(new Pair<>("Clase 7\nProgresion I-IV-V en E", LessonName.Progression145_E));
+        lessons = new ArrayList<>();
+        lessons.add(new Pair<>("Clase 1\nAcordes mayores", LessonName.Major));
+        lessons.add(new Pair<>("Clase 2\nAcordes menores", LessonName.Minor));
+        lessons.add(new Pair<>("Clase 3\nAcordes de 7ª dominante", LessonName.Dominant));
+        lessons.add(new Pair<>("Clase 4\nAcordes Shake It Off\nTaylor Swift", LessonName.ShakeItOff));
+        lessons.add(new Pair<>("Clase 5\nAcordes I Gotta feelin\nBlack Eyes Peas", LessonName.IGottaFeelin));
+        lessons.add(new Pair<>("Clase 6\nAcordes Zombie\nThe Cranberries", LessonName.Zombie));
+        lessons.add(new Pair<>("Clase 7\nAcordes Accidentaly In Love\nCounting Crows", LessonName.AccidentalyInLove));
 
         setUpCarousel();
     }
@@ -47,19 +47,19 @@ public class LessonSelectionScreen extends AppCompatActivity {
         carousel.setAdapter(new Carousel.Adapter() {
             @Override
             public int count() {
-                return names.size();
+                return lessons.size();
             }
 
             @Override
             public void populate(View view, int index) {
                 SharedPreferences sh = getPreferences(Context.MODE_PRIVATE);
-                String status = sh.getString(names.get(index).first, "");
-                ((Button)view).setText(names.get(index).first + "\n\n" + status);
+                String status = sh.getString(lessons.get(index).first, "");
+                ((Button)view).setText(lessons.get(index).first + "\n\n" + status);
 
                 view.setOnClickListener(new View.OnClickListener(){
                     @Override
                     public void onClick(View view) {
-                        startLesson(names.get(index).second.toString());
+                        startLesson(lessons.get(index).second.toString());
                     }
                 });
             }
