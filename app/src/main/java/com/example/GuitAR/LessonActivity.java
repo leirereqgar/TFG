@@ -51,8 +51,8 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     Boolean marker_found = false;
     Scalar high_limit, low_limit; // Limites superior e inferior del color amarillo en el espacio hsv
     MatOfPoint2f approx_curve;
-    private final int min_frets = 8, n_strings = 6;
-    ArrayList<double[]> frets, strings = new ArrayList<>(); // Array para los trastes y las cuerdas
+    private final int min_frets = 8;
+    ArrayList<double[]> frets = new ArrayList<>(); // Array para los trastes y las cuerdas
 
     ///////////////////////////////////////////////////////////////////
     // TIMERS PARA EJECUTAR LAS DETECCIONES
@@ -196,29 +196,15 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
 
         printActualChordInfo();
 
-//        try {
-//            findMarker();
-//        } catch (Exception e) {}
-
         //Imgproc.circle(src, new Point(marker.x, marker.y),20, new Scalar(255,0,0),-1);
         Imgproc.ellipse(src, new Point(marker.x, marker.y), new Size(10,30),0,0,360,orange,20);
         for (int i = 0; i < frets.size(); i++) {
-//            Point pt1 = new Point(Math.round(frets.get(i)[0] + 1000*(-frets.get(i)[3])), Math.round(frets.get(i)[1] + 1000*(frets.get(i)[2])));
-//            Point pt2 = new Point(Math.round(frets.get(i)[0] - 1000*(-frets.get(i)[3])), Math.round(frets.get(i)[1] - 1000*(frets.get(i)[2])));
-//            Imgproc.line(src, pt1, pt2, new Scalar(0,255,0), 10);
             Point pt = new Point(frets.get(i)[0], frets.get(0)[1]-10);
-            //Imgproc.circle(src, pt, 20,new Scalar(0,255,0), -1);
             Imgproc.ellipse(src, pt, new Size(10,30),0,0,360,orange,20);
             pt.x -= 10;
             pt.y += 5;
             Imgproc.putText(src, Integer.toString(i), pt, 0,1,white, 4);
         }
-
-//        for (int i = 0; i < strings.size(); i++) {
-//            Point pt1 = new Point(Math.round(strings.get(i)[0] + 1000*(-strings.get(i)[3])), Math.round(strings.get(i)[1] + 1000*(strings.get(i)[2])));
-//            Point pt2 = new Point(Math.round(strings.get(i)[0] - 1000*(-strings.get(i)[3])), Math.round(strings.get(i)[1] - 1000*(strings.get(i)[2])));
-//            Imgproc.line(src, pt1, pt2, new Scalar(0,0,255), 10);
-//        }
 
         if(marker_found &&
            frets.size() > info.getChord(index).numFrets() &&
@@ -352,7 +338,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         Imgproc.HoughLines(dst, lines, 1, Math.PI/180, 150);
 
         ArrayList<double[]> possible_frets = new ArrayList<>();
-        ArrayList<double[]> possible_strings = new ArrayList<>();
         possible_frets.add(new double[]{marker.x+ marker.width, marker.y,0,0});
         for (int i = 0; i < lines.rows(); i++) {
             double rho = lines.get(i, 0)[0],
@@ -370,27 +355,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
                 for (int j = 0; j < possible_frets.size() && add; j++) {
                     if (Math.abs(possible_frets.get(j)[0] - x0) < 150 || x0 < 0
                             || Double.compare(marker.x + marker.width, x0) > 0) {
-                        //System.out.println(x0);
                         add = false;
                     }
                 }
 
                 if (add) {
                     possible_frets.add(new double[]{x0, y0, a, b});
-                }
-            }
-            else if(areParallel(marker_slope,line_slope)) {
-                boolean add = true;
-                for (int j = 0; j < possible_strings.size() && add; j++) {
-                    if (Math.abs(possible_strings.get(j)[1] - y0) < 10
-                        || y0 < marker.y || y0 > marker.y + marker.height) {
-                        add = false;
-                        possible_strings.get(j)[4]++;
-                    }
-                }
-
-                if (add) {
-                    possible_strings.add(new double[]{x0, y0, a, b, 1});
                 }
             }
         }
@@ -402,25 +372,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         if(frets.isEmpty() || variation >= 100) {
             checkFrets(possible_frets);
             frets = possible_frets;
-        }
-
-//        for (int i = 0; i <possible_strings.size(); i++) {
-//            Log.i("prueba", possible_strings.get(i)[1]+"");
-//        }
-        possible_strings.sort(Comparator.comparingDouble(d -> d[1]));
-        possible_strings.remove(0);
-        checkStrings(possible_strings);
-//
-//        for (int i = 0; i <possible_strings.size(); i++) {
-//            Log.i("prueba", possible_strings.get(i)[1]+"");
-//        }
-
-        variation = 0;
-        if(!strings.isEmpty())
-            variation = Math.abs(strings.get(1)[1] - possible_strings.get(1)[1]);
-        if(strings.isEmpty() || variation >= 100) {
-            checkStrings(possible_strings);
-            strings = possible_strings;
         }
     }
 
@@ -469,14 +420,11 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         if (j != (frets_copy.size()-1)){
             while (j < frets_copy.size() && cont) {
                 double d = Math.abs(frets_copy.get(j)[0] - frets_copy.get(i)[0]);
-                //System.out.println(j + " " + i + " " + d + " backtracking " + (l - dist) / rule_cte);
                 if (Math.abs(d - (l - dist) / rule_cte) < 5) {
-                    //System.out.println("siguiente");
                     candidates.add(frets_copy.get(j));
                     checkFret(j, l, d + dist, frets_copy,candidates);
                     cont = false;
                 } else {
-                    //System.out.println("elimina" + j);
                     frets_copy.remove(j);
                 }
             }
@@ -515,70 +463,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         }
     }
 
-    private void checkStrings(ArrayList<double[]> possible_strings) {
-        int size = possible_strings.size();
-        ArrayList<double[]> strings_copy;
-        ArrayList<double[]> candidates= new ArrayList<>();
-        candidates.add(possible_strings.get(0));
-        candidates.add(possible_strings.get(1));
-        int i = 1, max = 2;
-        while (i < size) {
-            strings_copy =  new ArrayList<>(possible_strings);
-            double d = Math.abs(possible_strings.get(i)[1] - possible_strings.get(0)[1]);
-            System.out.println(i + " " + (i-1)+ " " + d + "");
-            checkString(i,d,strings_copy,candidates);
-
-            strings_copy.remove(i);
-            size--;
-
-            if(candidates.size() >= max && max < 6){
-                max = candidates.size();
-            }
-            else {
-                candidates.clear();
-                candidates.add(strings_copy.get(0));
-                candidates.add(strings_copy.get(i));
-            }
-        }
-
-        if(candidates.size() >= 2) {
-            possible_strings = candidates;
-        }
-        else {
-            possible_strings.clear();
-            possible_strings.add(candidates.get(0));
-        }
-
-        calcStrings(possible_strings);
-    }
-    private void checkString(int i,  double dist,ArrayList<double[]> strings_copy, ArrayList<double[]> candidates) {
-        int j = i+1;
-        boolean cont = true;
-        if (j != (strings_copy.size()-1)){
-            while (j < strings_copy.size() && cont) {
-                double d = Math.abs(strings_copy.get(j)[1] - strings_copy.get(i)[1]);
-                //System.out.println(j + " " + i + " " + d + " backtracking " + (l - dist) / rule_cte);
-                if (Math.abs(d - dist) < 5) {
-                    //System.out.println("siguiente");
-                    candidates.add(strings_copy.get(j));
-                    checkString(j, d, strings_copy,candidates);
-                    cont = false;
-                } else {
-                    //System.out.println("elimina" + j);
-                    strings_copy.remove(j);
-                }
-            }
-        }
-    }
-
-    private void calcStrings(ArrayList<double[]> possible_strings) {
-        if(possible_strings.size() < 6) {
-            double d = possible_strings.get(1)[1] - possible_strings.get(0)[1];
-            for (int i = possible_strings.size()-1; i < 6; i++) {
-                possible_strings.add(new double[]{marker.x, possible_strings.get(i)[1] + d, possible_strings.get(i)[2], possible_strings.get(i)[3]});
-            }
-        }
-    }
     /**
      * calcSlope : calcula el angulo de la recta que forman los puntos
      * @param x1 : coordenada x del primer punto
@@ -601,6 +485,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         return Math.abs(p1-p2) <= 0.01;
     }
 
+    /**
+     * areParallel   : comprueba si dos rectas son perpendiculares con sus pendientes
+     * @param m1     : pendiente 1
+     * @param m2     : pendiente 2
+     * @return       : true si son perpendiculares, false si no
+     */
     private boolean arePerpendicular(double m1, double m2){
         return Math.abs(m1-1/m2) <= 0.1;
     }
@@ -743,7 +633,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     private void drawNote(Note n, Scalar c) {
         if(!frets.isEmpty()){
             double x = (frets.get(n.getFret() - 1)[0] + frets.get(n.getFret())[0]) / 2 + 10; // Calcular la posicion entre trastes
-            //double y = strings.get(6-n.getString())[1];
 
             double interval = marker.height / 6.0;
 
