@@ -31,8 +31,8 @@ public class Minor extends Lesson{
         chords.add(d_minor);   
         
         Chord e_minor = new Chord(NoteNameEnum.E, ChordTypeEnum.Minor);
-        d_minor.add(new Note(5,2));
-        d_minor.add(new Note(4,2));
+        e_minor.add(new Note(5,2));
+        e_minor.add(new Note(4,2));
         chords.add(e_minor);
         
         Chord f_minor = new Chord(NoteNameEnum.F, ChordTypeEnum.Minor);
