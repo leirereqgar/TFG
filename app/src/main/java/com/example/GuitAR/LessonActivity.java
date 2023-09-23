@@ -232,6 +232,12 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
     // METODOS PARA PROCESADO DE LA IMAGEN
     ///////////////////////////////////////////////////////////////////
     private int th_lower, th_hihger;
+
+    /**
+     * calibrate : calibra los limites inferior y superior que necesita hough lines para detectar
+     * las lineas
+     * @param gray : frame en blanco y negro
+     */
     private void calibrate(Mat gray) {
         int lower = 0, higher = 255;
         int min_lower = lower, max_higher = higher;
@@ -276,7 +282,6 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
         Rect min = new Rect(new double[]{0,0,yellow_img.cols()/2d,yellow_img.rows()});
         List<MatOfPoint> contours = new ArrayList<>();
         Imgproc.findContours(yellow_img.submat(min), contours, new Mat(), Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
-        //marker_found = false;
 
         for (MatOfPoint contour : contours) {
             MatOfPoint2f curve = new MatOfPoint2f(contour.toArray());
@@ -287,19 +292,18 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             if(Math.abs(area) >= 1000  && n_vertices == 4 && area >= old_area) {
                 marker = Imgproc.boundingRect(contour);
                 marker_found = true;
-                // DEBUG
-                Imgproc.rectangle(src, new Point(marker.x, marker.y),
-                        new Point(marker.x+ marker.width, marker.y+ marker.height),
-                        new Scalar(0,0,255), 3, Imgproc.LINE_8);
             }
         }
     }
 
+    /**
+     * countLines : calcula el total de lineas encontradas por hough lines
+     * @param gray : frame en blanco y negro
+     * @param l : limite inferior
+     * @param h : limite superior
+     * @return numero total de lineas en la imagen con los limites dados
+     */
     public int countLines(Mat gray, int l, int h) {
-        //Calcular el angulo del lado del marcador
-        double marker_slope = calcSlope(marker.x, marker.y,
-                marker.x + marker.width, marker.y);
-
         dst = new Mat();
         Imgproc.Canny(gray, dst, l, h, 3);
         Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size((2*2) + 1, (2*2)+1));
@@ -430,6 +434,7 @@ public class LessonActivity extends AppCompatActivity implements CameraBridgeVie
             }
         }
     }
+
     private void calcFrets(ArrayList<double[]> possible_frets) {
         double actual_lenght, diff, x;
 
